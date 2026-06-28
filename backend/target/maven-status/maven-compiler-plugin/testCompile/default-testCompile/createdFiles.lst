@@ -1,0 +1,13 @@
+com\dob\application\service\CompanyDataMaskingTest$PremiumUserFullAccess.class
+com\dob\application\service\CompanyRegistrationServiceTest$SuccessfulRegistration.class
+com\dob\TestTokenProvider.class
+com\dob\application\service\CompanyRegistrationServiceTest$ValidationAndErrorHandling.class
+com\dob\application\service\ResearchMemberRegistrationServiceTest$ValidationAndErrorHandling.class
+com\dob\application\service\CompanyDataMaskingTest$FreeUserDataMasking.class
+com\dob\domain\model\CompanySerializationTest.class
+com\dob\application\service\CompanyRegistrationServiceTest.class
+com\dob\application\service\ResearchMemberRegistrationServiceTest.class
+com\dob\infrastructure\web\CompanyControllerSecurityTest.class
+com\dob\application\service\ResearchMemberRegistrationServiceTest$SuccessfulRegistration.class
+com\dob\application\service\CompanyDataMaskingTest$PublicCompanyIdFormat.class
+com\dob\application\service\CompanyDataMaskingTest.class

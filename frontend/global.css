@@ -1,0 +1,26 @@
+/* NativeWind v4 base directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Web-specific: ensure React Native Web fills the viewport */
+@layer base {
+  html, body, #root {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    /* Prevent mobile Safari from zooming on input focus */
+    touch-action: manipulation;
+  }
+
+  /* React Native Web root element */
+  #root {
+    display: flex;
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,57 @@
+package com.dob.infrastructure.persistence.repository;
+
+import com.dob.infrastructure.persistence.entity.CompanyEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+@Repository
+public interface CompanyJpaRepository extends JpaRepository<CompanyEntity, UUID> {
+
+    @Query(value = """
+        SELECT * FROM companies c
+        WHERE c.status = 'APPROVED'
+        AND (:query IS NULL OR LOWER(c.name) LIKE LOWER(CONCAT('%', :query, '%')))
+        AND (:sector IS NULL OR c.sector = :sector)
+        AND (:state IS NULL OR c.state = :state)
+        AND (:companyType IS NULL OR c.company_type = :companyType)
+        ORDER BY c.name
+        LIMIT :limit OFFSET :offset
+        """, nativeQuery = true)
+    List<CompanyEntity> search(
+        @Param("query") String query,
+        @Param("sector") String sector,
+        @Param("state") String state,
+        @Param("companyType") String companyType,
+        @Param("limit") int limit,
+        @Param("offset") int offset
+    );
+
+    @Query(value = """
+        SELECT count(*) FROM companies c
+        WHERE c.status = 'APPROVED'
+        AND (:query IS NULL OR LOWER(c.name) LIKE LOWER(CONCAT('%', :query, '%')))
+        AND (:sector IS NULL OR c.sector = :sector)
+        AND (:state IS NULL OR c.state = :state)
+        AND (:companyType IS NULL OR c.company_type = :companyType)
+        """, nativeQuery = true)
+    long countSearch(
+        @Param("query") String query,
+        @Param("sector") String sector,
+        @Param("state") String state,
+        @Param("companyType") String companyType
+    );
+
+    List<CompanyEntity> findByStatus(CompanyEntity.CompanyStatus status);
+
+    List<CompanyEntity> findByCreatedBy(UUID userId);
+
+    boolean existsByName(String name);
+
+    Optional<CompanyEntity> findByPublicCompanyId(String publicCompanyId);
+}

@@ -1,0 +1,107 @@
+spring:
+  application:
+    name: dob-backend
+  mvc:
+    pathmatch:
+      matching-strategy: ant-path-matcher
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:dob}
+    username: ${DB_USER:dob}
+    password: ${DB_PASSWORD:dob}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          batch_size: 25
+          fetch_size: 100
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 4
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+server:
+  port: ${SERVER_PORT:8080}
+  forward-headers-strategy: framework
+
+# JWT
+jwt:
+  secret: ${JWT_SECRET:changeme-change-me-change-me-change-me-change}
+  access-token-expiration: 15m
+  refresh-token-expiration: 7d
+
+# Razorpay
+razorpay:
+  key-id: ${RAZORPAY_KEY_ID:rzp_test_xxx}
+  key-secret: ${RAZORPAY_KEY_SECRET:xxx}
+  webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:whsec_xxx}
+
+# Storage (S3 or MinIO)
+storage:
+  provider: ${STORAGE_PROVIDER:minio}
+  s3:
+    region: ${AWS_REGION:ap-south-1}
+    bucket: ${S3_BUCKET:dob-files}
+    access-key: ${AWS_ACCESS_KEY:minioadmin}
+    secret-key: ${AWS_SECRET_KEY:minioadmin}
+    endpoint: ${S3_ENDPOINT:http://localhost:9000}
+    path-style-access: true
+  minio:
+    endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+    access-key: ${MINIO_ACCESS_KEY:minioadmin}
+    secret-key: ${MINIO_SECRET_KEY:minioadmin}
+    bucket: ${MINIO_BUCKET:dob-files}
+
+# Platform pricing (from spec.md)
+pricing:
+  membership: 2500.00
+  company-listing: 500.00
+  gst-rate: 0.18
+
+# Download limits (from terms.html)
+downloads:
+  monthly-limit: 50
+  daily-limit: 10
+
+# CORS — configured in CorsConfig.java (all origins allowed)
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+
+# Springdoc
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+  show-actuator: false
+
+logging:
+  level:
+    com.dob: ${LOG_LEVEL:INFO}
+    org.springframework.security: WARN

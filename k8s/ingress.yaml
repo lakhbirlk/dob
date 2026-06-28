@@ -1,0 +1,36 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dob-ingress
+  namespace: dob
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - dataofbusiness.in
+        - api.dataofbusiness.in
+      secretName: dob-tls
+  rules:
+    - host: dataofbusiness.in
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: dob-frontend-service
+                port:
+                  number: 80
+    - host: api.dataofbusiness.in
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: dob-backend-service
+                port:
+                  number: 8080
