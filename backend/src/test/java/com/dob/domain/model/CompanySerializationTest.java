@@ -87,39 +87,63 @@ class CompanySerializationTest {
         var premiumResp = new PremiumCompanyResponse(
             "DOB-7F92A1BC",
             "TechVentures India Pvt Ltd",
-            "U72300KA2016PTC123456",
-            "29ABCDE1234F1Z5",
-            "AABCT1234E",
-            "12345678",
-            "Information Technology",
-            "Enterprise Software",
-            "Private Limited",
-            2016,
-            8,
-            "Karnataka",
-            "Bengaluru",
-            "123, MG Road, Indiranagar",
-            "contact@techventures.in",
-            "https://techventures.in",
-            "200-500",
-            "₹50Cr-100Cr",
-            "Medium",
-            true,
-            false,
-            "A leading enterprise software company.",
-            "https://cdn.example.com/logo.png",
-            List.of(Map.of("name", "Rajesh Kumar", "designation", "CEO")),
-            List.of(Map.of("shareholder", "Rajesh Kumar", "percentage", 60)),
-            List.of(),
-            List.of(),
-            List.of(),
-            "Strong financial position with consistent growth.",
-            "https://cdn.example.com/reports/risk-dob-7f92a1bc.pdf",
-            true,
-            "/company/DOB-7F92A1BC",
-            "APPROVED",
-            java.time.Instant.now(),
-            java.time.Instant.now()
+            "https://cdn.example.com/logo.png",        // logoUrl
+            "U72300KA2016PTC123456",                   // cin
+            "29ABCDE1234F1Z5",                         // gstin
+            "AABCT1234E",                              // pan
+            "12345678",                                // registrationNumber
+            null,                                      // companyRegistrationNumber
+            "Information Technology",                  // industry
+            "Enterprise Software",                     // subSector
+            "Private Limited",                         // businessType
+            null,                                      // businessModel
+            null,                                      // companyStage
+            2016,                                      // incorporationYear
+            8,                                         // companyAge
+            "Karnataka",                               // state
+            "Bengaluru",                               // city
+            "123, MG Road, Indiranagar",              // address
+            null,                                      // headquarter
+            null,                                      // numBranches
+            "contact@techventures.in",                 // email
+            null,                                      // phoneNumber
+            "https://techventures.in",                 // website
+            null,                                      // linkedinUrl
+            null,                                      // twitterUrl
+            "200-500",                                 // employeeRange
+            null,                                      // employeeCount
+            null,                                      // annualRevenue
+            "₹50Cr-100Cr",                            // revenueRange
+            null,                                      // totalFunding
+            null,                                      // investors
+            "Medium",                                  // riskScore
+            true,                                      // verified
+            false,                                     // locked
+            "A leading enterprise software company.",  // description
+            null,                                      // mission
+            null,                                      // vision
+            null,                                      // cultureSummary
+            List.of(Map.of("name", "Rajesh Kumar", "designation", "CEO")),  // keyExecutives
+            null,                                      // ceoName
+            null,                                      // ctoName
+            null,                                      // founders
+            null,                                      // products
+            null,                                      // services
+            null,                                      // technologiesUsed
+            null,                                      // certificationsOverview
+            null,                                      // awards
+            List.of(Map.of("shareholder", "Rajesh Kumar", "percentage", 60)), // shareholding
+            List.of(),                                 // financials
+            List.of(),                                 // certificates
+            List.of(),                                 // videos
+            "Strong financial position with consistent growth.", // aiAnalysis
+            "https://cdn.example.com/reports/risk-dob-7f92a1bc.pdf", // riskReportUrl
+            true,                                      // canDownload
+            "/company/DOB-7F92A1BC",                   // companyUrl
+            "APPROVED",                                // status
+            null,                                      // dashboardStatus
+            java.time.Instant.now(),                   // createdAt
+            java.time.Instant.now()                    // updatedAt
         );
 
         String json = objectMapper.writeValueAsString(premiumResp);

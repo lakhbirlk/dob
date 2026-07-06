@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
@@ -68,6 +69,9 @@ public class CompanyEntity {
     @Column(name = "startup_india_registration", length = 50)
     private String startupIndiaRegistration;
 
+    @Column(name = "company_registration_number", length = 50)
+    private String companyRegistrationNumber;
+
     // Registered Office
     @Column(name = "registered_address_line1", length = 255)
     private String registeredAddressLine1;
@@ -99,6 +103,15 @@ public class CompanyEntity {
 
     @Column(name = "social_media_links", columnDefinition = "TEXT")
     private String socialMediaLinks;
+
+    @Column(name = "twitter_url", length = 255)
+    private String twitterUrl;
+
+    @Column(name = "phone_number", length = 20)
+    private String phoneNumber;
+
+    @Column(length = 255)
+    private String headquarter;
 
     // Authorized Representative
     @Column(name = "authorized_rep_name", length = 255)
@@ -141,6 +154,12 @@ public class CompanyEntity {
     @Column(name = "auditor_details", columnDefinition = "TEXT")
     private String auditorDetails;
 
+    @Column(name = "total_funding", length = 50)
+    private String totalFunding;
+
+    @Column(columnDefinition = "TEXT")
+    private String investors;
+
     // Business Information
     @Column(name = "products_services", columnDefinition = "TEXT")
     private String productsServices;
@@ -160,6 +179,50 @@ public class CompanyEntity {
     @Column(name = "certifications", columnDefinition = "TEXT")
     private String certifications;
 
+    // Extended Company Profile
+    @Column(name = "ceo_name", length = 255)
+    private String ceoName;
+
+    @Column(name = "cto_name", length = 255)
+    private String ctoName;
+
+    @Column(columnDefinition = "TEXT")
+    private String founders;
+
+    @Column(name = "business_model", length = 100)
+    private String businessModel;
+
+    @Column(name = "company_stage", length = 20)
+    private String companyStage;
+
+    @Column(name = "technologies_used", columnDefinition = "TEXT")
+    private String technologiesUsed;
+
+    @Column(columnDefinition = "TEXT")
+    private String awards;
+
+    @Column(name = "culture_summary", columnDefinition = "TEXT")
+    private String cultureSummary;
+
+    @Column(columnDefinition = "TEXT")
+    private String mission;
+
+    @Column(columnDefinition = "TEXT")
+    private String vision;
+
+    @Column(name = "dashboard_status", length = 20)
+    private String dashboardStatus;
+
+    // JSON aggregate data
+    @Column(name = "financial_data_json", columnDefinition = "TEXT")
+    private String financialDataJson;
+
+    @Column(name = "certificates_data_json", columnDefinition = "TEXT")
+    private String certificatesDataJson;
+
+    @Column(name = "videos_data_json", columnDefinition = "TEXT")
+    private String videosDataJson;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private CompanyStatus status;
@@ -173,6 +236,15 @@ public class CompanyEntity {
     @Column(name = "approved_at")
     private Instant approvedAt;
 
+    @Column(name = "submitted_at")
+    private Instant submittedAt;
+
+    @Column(name = "rejection_comment", columnDefinition = "TEXT")
+    private String rejectionComment;
+
+    @Column(name = "listing_expires_at")
+    private LocalDate listingExpiresAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -180,7 +252,7 @@ public class CompanyEntity {
     private Instant updatedAt;
 
     public enum CompanyStatus {
-        PENDING, APPROVED, REJECTED, SUSPENDED
+        DRAFT, PENDING_REVIEW, REJECTED, APPROVED_MEMBERSHIP_PENDING, APPROVED_ACTIVE, MEMBERSHIP_EXPIRED, SUSPENDED
     }
 
     @PrePersist

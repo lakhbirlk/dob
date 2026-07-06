@@ -5,9 +5,9 @@ import com.dob.domain.repository.CompanyRepository;
 import com.dob.infrastructure.persistence.entity.CompanyEntity;
 import com.dob.infrastructure.persistence.repository.CompanyJpaRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -50,15 +50,40 @@ public class CompanyRepositoryAdapter implements CompanyRepository {
     }
 
     @Override
-    public List<Company> findByStatus(Company.CompanyStatus status, int page, int size) {
-        var pageable = PageRequest.of(page, size);
+    public List<Company> findByStatus(Company.CompanyStatus status) {
         return jpa.findByStatus(CompanyEntity.CompanyStatus.valueOf(status.name()))
+            .stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public List<Company> findByStatusIn(List<Company.CompanyStatus> statuses) {
+        var entityStatuses = statuses.stream()
+            .map(s -> CompanyEntity.CompanyStatus.valueOf(s.name()))
+            .toList();
+        return jpa.findByStatusIn(entityStatuses)
+            .stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public List<Company> findExpiredListings(LocalDate today) {
+        return jpa.findExpiredListings(today)
             .stream().map(this::toDomain).toList();
     }
 
     @Override
     public List<Company> findByCreatedBy(UUID userId) {
         return jpa.findByCreatedBy(userId).stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public List<Company> findByCreatedBy(UUID userId, int page, int size) {
+        return jpa.findByCreatedBy(userId, size, page * size)
+            .stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public long countByCreatedBy(UUID userId) {
+        return jpa.countByCreatedBy(userId);
     }
 
     @Override
@@ -84,6 +109,9 @@ public class CompanyRepositoryAdapter implements CompanyRepository {
             .createdBy(e.getCreatedBy())
             .approvedBy(e.getApprovedBy())
             .approvedAt(e.getApprovedAt())
+            .submittedAt(e.getSubmittedAt())
+            .rejectionComment(e.getRejectionComment())
+            .listingExpiresAt(e.getListingExpiresAt())
             .createdAt(e.getCreatedAt())
             .updatedAt(e.getUpdatedAt())
             // Registration fields
@@ -93,6 +121,7 @@ public class CompanyRepositoryAdapter implements CompanyRepository {
             .tan(e.getTan())
             .msmeRegistration(e.getMsmeRegistration())
             .startupIndiaRegistration(e.getStartupIndiaRegistration())
+            .companyRegistrationNumber(e.getCompanyRegistrationNumber())
             .registeredAddressLine1(e.getRegisteredAddressLine1())
             .registeredAddressLine2(e.getRegisteredAddressLine2())
             .registeredCity(e.getRegisteredCity())
@@ -103,6 +132,9 @@ public class CompanyRepositoryAdapter implements CompanyRepository {
             .officialPhone(e.getOfficialPhone())
             .linkedinProfile(e.getLinkedinProfile())
             .socialMediaLinks(e.getSocialMediaLinks())
+            .twitterUrl(e.getTwitterUrl())
+            .phoneNumber(e.getPhoneNumber())
+            .headquarter(e.getHeadquarter())
             .authorizedRepName(e.getAuthorizedRepName())
             .authorizedRepDesignation(e.getAuthorizedRepDesignation())
             .authorizedRepMobile(e.getAuthorizedRepMobile())
@@ -116,12 +148,28 @@ public class CompanyRepositoryAdapter implements CompanyRepository {
             .financialYear(e.getFinancialYear())
             .balanceSheetUrl(e.getBalanceSheetUrl())
             .auditorDetails(e.getAuditorDetails())
+            .totalFunding(e.getTotalFunding())
+            .investors(e.getInvestors())
             .productsServices(e.getProductsServices())
             .businessDescription(e.getBusinessDescription())
             .exportImportStatus(e.getExportImportStatus())
             .numBranches(e.getNumBranches())
             .operationalStates(e.getOperationalStates())
             .certifications(e.getCertifications())
+            .ceoName(e.getCeoName())
+            .ctoName(e.getCtoName())
+            .founders(e.getFounders())
+            .businessModel(e.getBusinessModel())
+            .companyStage(e.getCompanyStage())
+            .technologiesUsed(e.getTechnologiesUsed())
+            .awards(e.getAwards())
+            .cultureSummary(e.getCultureSummary())
+            .mission(e.getMission())
+            .vision(e.getVision())
+            .dashboardStatus(e.getDashboardStatus())
+            .financialDataJson(e.getFinancialDataJson())
+            .certificatesDataJson(e.getCertificatesDataJson())
+            .videosDataJson(e.getVideosDataJson())
             .build();
     }
 
@@ -143,6 +191,9 @@ public class CompanyRepositoryAdapter implements CompanyRepository {
             .createdBy(c.getCreatedBy())
             .approvedBy(c.getApprovedBy())
             .approvedAt(c.getApprovedAt())
+            .submittedAt(c.getSubmittedAt())
+            .rejectionComment(c.getRejectionComment())
+            .listingExpiresAt(c.getListingExpiresAt())
             .createdAt(c.getCreatedAt())
             .updatedAt(c.getUpdatedAt())
             // Registration fields
@@ -152,6 +203,7 @@ public class CompanyRepositoryAdapter implements CompanyRepository {
             .tan(c.getTan())
             .msmeRegistration(c.getMsmeRegistration())
             .startupIndiaRegistration(c.getStartupIndiaRegistration())
+            .companyRegistrationNumber(c.getCompanyRegistrationNumber())
             .registeredAddressLine1(c.getRegisteredAddressLine1())
             .registeredAddressLine2(c.getRegisteredAddressLine2())
             .registeredCity(c.getRegisteredCity())
@@ -162,6 +214,9 @@ public class CompanyRepositoryAdapter implements CompanyRepository {
             .officialPhone(c.getOfficialPhone())
             .linkedinProfile(c.getLinkedinProfile())
             .socialMediaLinks(c.getSocialMediaLinks())
+            .twitterUrl(c.getTwitterUrl())
+            .phoneNumber(c.getPhoneNumber())
+            .headquarter(c.getHeadquarter())
             .authorizedRepName(c.getAuthorizedRepName())
             .authorizedRepDesignation(c.getAuthorizedRepDesignation())
             .authorizedRepMobile(c.getAuthorizedRepMobile())
@@ -175,12 +230,28 @@ public class CompanyRepositoryAdapter implements CompanyRepository {
             .financialYear(c.getFinancialYear())
             .balanceSheetUrl(c.getBalanceSheetUrl())
             .auditorDetails(c.getAuditorDetails())
+            .totalFunding(c.getTotalFunding())
+            .investors(c.getInvestors())
             .productsServices(c.getProductsServices())
             .businessDescription(c.getBusinessDescription())
             .exportImportStatus(c.getExportImportStatus())
             .numBranches(c.getNumBranches())
             .operationalStates(c.getOperationalStates())
             .certifications(c.getCertifications())
+            .ceoName(c.getCeoName())
+            .ctoName(c.getCtoName())
+            .founders(c.getFounders())
+            .businessModel(c.getBusinessModel())
+            .companyStage(c.getCompanyStage())
+            .technologiesUsed(c.getTechnologiesUsed())
+            .awards(c.getAwards())
+            .cultureSummary(c.getCultureSummary())
+            .mission(c.getMission())
+            .vision(c.getVision())
+            .dashboardStatus(c.getDashboardStatus())
+            .financialDataJson(c.getFinancialDataJson())
+            .certificatesDataJson(c.getCertificatesDataJson())
+            .videosDataJson(c.getVideosDataJson())
             .build();
     }
 }

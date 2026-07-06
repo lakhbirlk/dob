@@ -186,7 +186,7 @@ class CompanyRegistrationServiceTest {
             });
             lenient().when(companyRepository.save(any())).thenAnswer(inv -> {
                 Company c = inv.getArgument(0);
-                assertThat(c.getStatus()).isEqualTo(Company.CompanyStatus.PENDING);
+                assertThat(c.getStatus()).isEqualTo(Company.CompanyStatus.DRAFT);
                 assertThat(c.getName()).isEqualTo("TechVentures India Pvt Ltd");
                 assertThat(c.getBrandName()).isEqualTo("TechVentures");
                 assertThat(c.getCin()).isEqualTo("U72300KA2016PTC123456");

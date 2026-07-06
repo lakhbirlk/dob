@@ -26,6 +26,7 @@ public class CompanyController {
     @GetMapping
     @Operation(summary = "Search companies", description = """
         Paginated company search with filters.
+        Only returns publicly visible companies (APPROVED_ACTIVE with active listing membership).
         For FREE users: returns masked results with DoB Company ID only (no name, CIN, GST, PAN, etc.).
         For PREMIUM (subscribed) users: returns full company profiles.
         """)
@@ -50,6 +51,7 @@ public class CompanyController {
         Returns company profile with financials, certificates, and videos.
         FREE users: masked response with DoB ID only.
         PREMIUM users: complete company profile.
+        Owners: complete company profile regardless of visibility status.
         """)
     public Object getById(
         @Parameter(description = "Company UUID (internal)") @PathVariable UUID id,
@@ -74,14 +76,17 @@ public class CompanyController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Create company listing", description = "Submit a new company listing for approval. Requires COMPANY_USER role. ₹500 + GST listing fee applies.")
+    @Operation(summary = "Create company listing (DRAFT)", description = """
+        Submit a new company listing in DRAFT status.
+        The company must be completed and submitted for review before it can be approved.
+        """)
     public CompanyDto create(@AuthenticationPrincipal UserPrincipal principal,
                               @Valid @RequestBody CreateCompanyRequest request) {
         return companyService.create(principal, request);
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Update company listing", description = "Update an existing company listing owned by the authenticated user.")
+    @Operation(summary = "Update company listing", description = "Update an existing company listing owned by the authenticated user. Only allowed in DRAFT or REJECTED status.")
     public CompanyDto update(@Parameter(description = "Company UUID") @PathVariable UUID id,
                               @AuthenticationPrincipal UserPrincipal principal,
                               @Valid @RequestBody CreateCompanyRequest request) {
@@ -92,5 +97,51 @@ public class CompanyController {
     @Operation(summary = "My companies", description = "Returns all company listings created by the authenticated COMPANY_USER.")
     public List<CompanyDto> getMyCompanies(@AuthenticationPrincipal UserPrincipal principal) {
         return companyService.getMyCompanies(principal);
+    }
+
+    @GetMapping("/my/details")
+    @Operation(summary = "My companies with details", description = "Returns all company listings created by the authenticated COMPANY_USER with full workflow details (status, submission info, membership).")
+    public List<CompanyDetailDto> getMyCompanyDetails(@AuthenticationPrincipal UserPrincipal principal) {
+        return companyService.getMyCompanyDetails(principal);
+    }
+
+    @GetMapping("/{id}/owner-view")
+    @Operation(summary = "Get company detail for owner", description = "Returns full company details for the listing owner, regardless of visibility status.")
+    public CompanyDetailDto getCompanyDetailForOwner(
+        @Parameter(description = "Company UUID") @PathVariable UUID id,
+        @AuthenticationPrincipal UserPrincipal principal) {
+        return companyService.getCompanyDetailForOwner(id, principal);
+    }
+
+    // ──────── Submission Workflow ────────
+
+    @PostMapping("/{id}/submit")
+    @Operation(summary = "Submit company for review", description = "Submit a DRAFT company for admin review. Status changes to PENDING_REVIEW.")
+    public CompanyDto submitForReview(
+        @Parameter(description = "Company UUID") @PathVariable UUID id,
+        @AuthenticationPrincipal UserPrincipal principal) {
+        return companyService.submitForReview(id, principal);
+    }
+
+    @PostMapping("/{id}/resubmit")
+    @Operation(summary = "Resubmit rejected company", description = "Resubmit a REJECTED company for admin review after making corrections.")
+    public CompanyDto resubmitForReview(
+        @Parameter(description = "Company UUID") @PathVariable UUID id,
+        @AuthenticationPrincipal UserPrincipal principal) {
+        return companyService.resubmitForReview(id, principal);
+    }
+
+    // ──────── Listing Membership ────────
+
+    @PostMapping("/{id}/activate-listing")
+    @Operation(summary = "Activate listing membership", description = """
+        Activate listing membership for an approved company (after ₹500+GST payment).
+        Sets listing expiry to 1 year and transitions to APPROVED_ACTIVE status,
+        making the company publicly visible in search results.
+        """)
+    public CompanyDto activateListingMembership(
+        @Parameter(description = "Company UUID") @PathVariable UUID id,
+        @AuthenticationPrincipal UserPrincipal principal) {
+        return companyService.activateListingMembership(id, principal);
     }
 }

@@ -7,6 +7,7 @@ import com.dob.infrastructure.persistence.repository.MembershipJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -25,6 +26,11 @@ public class MembershipRepositoryAdapter implements MembershipRepository {
     public Optional<Membership> findActiveByUserId(UUID userId) {
         return jpa.findByUserIdAndStatus(userId, MembershipEntity.MembershipStatus.ACTIVE)
             .map(this::toDomain);
+    }
+
+    @Override
+    public List<Membership> findByUserId(UUID userId) {
+        return jpa.findByUserId(userId).stream().map(this::toDomain).toList();
     }
 
     @Override

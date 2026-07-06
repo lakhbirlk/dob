@@ -80,7 +80,7 @@ public class CompanyRegistrationService {
             .incorporationYear(incorporationYear)
             .description(request.businessDescription())
             .website(request.website())
-            .status(Company.CompanyStatus.PENDING)
+            .status(Company.CompanyStatus.DRAFT)
             .createdBy(user.getId())
             .createdAt(Instant.now())
             .updatedAt(Instant.now())

@@ -39,6 +39,10 @@ export default function AdminLayout() {
       }}
     >
       <Stack.Screen name="dashboard" options={{ title: "Admin Panel" }} />
+      <Stack.Screen name="members" options={{ title: "Research Members", headerShown: true }} />
+      <Stack.Screen name="members/[id]" options={{ title: "Member Details", headerShown: true }} />
+      <Stack.Screen name="company-members" options={{ title: "Company Members", headerShown: true }} />
+      <Stack.Screen name="company-members/[id]" options={{ title: "Company Details", headerShown: true }} />
       <Stack.Screen name="pending-approvals" options={{ title: "Pending Approvals", headerShown: true }} />
       <Stack.Screen name="refunds" options={{ title: "Refund Management", headerShown: true }} />
       <Stack.Screen name="grievances" options={{ title: "Grievance Management", headerShown: true }} />

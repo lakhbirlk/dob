@@ -5,8 +5,10 @@ import com.dob.domain.repository.UserRepository;
 import com.dob.infrastructure.persistence.entity.UserEntity;
 import com.dob.infrastructure.persistence.repository.UserJpaRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -46,6 +48,19 @@ public class UserRepositoryAdapter implements UserRepository {
     @Override
     public boolean existsByPan(String pan) {
         return jpa.existsByPan(pan);
+    }
+
+    @Override
+    public List<User> findByRole(User.UserRole role, int page, int size) {
+        return jpa.findByRole(
+            UserEntity.UserRole.valueOf(role.name()),
+            PageRequest.of(page, size)
+        ).stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public long countByRole(User.UserRole role) {
+        return jpa.countByRole(UserEntity.UserRole.valueOf(role.name()));
     }
 
     private User toDomain(UserEntity e) {

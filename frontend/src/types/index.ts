@@ -8,9 +8,12 @@ export enum UserRole {
 }
 
 export enum CompanyStatus {
-  PENDING = "PENDING",
-  APPROVED = "APPROVED",
+  DRAFT = "DRAFT",
+  PENDING_REVIEW = "PENDING_REVIEW",
   REJECTED = "REJECTED",
+  APPROVED_MEMBERSHIP_PENDING = "APPROVED_MEMBERSHIP_PENDING",
+  APPROVED_ACTIVE = "APPROVED_ACTIVE",
+  MEMBERSHIP_EXPIRED = "MEMBERSHIP_EXPIRED",
   SUSPENDED = "SUSPENDED",
 }
 
@@ -86,6 +89,23 @@ export interface CompanyProfile {
   coverImageUrl: string | null;
   linkedinUrl: string | null;
   twitterUrl: string | null;
+  phoneNumber: string | null;
+  headquarter: string | null;
+  businessModel: string | null;
+  companyStage: string | null;
+  mission: string | null;
+  vision: string | null;
+  cultureSummary: string | null;
+  ceoName: string | null;
+  ctoName: string | null;
+  founders: string | null;
+  totalFunding: string | null;
+  investors: string | null;
+  technologiesUsed: string | null;
+  awards: string | null;
+  certificationsOverview: string | null;
+  products: string | null;
+  services: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -93,11 +113,35 @@ export interface CompanyProfile {
 export interface FinancialStatement {
   id: string;
   companyId: string;
-  year: number;
+  financialYear: string;
+  // Documents
+  balanceSheetUrl: string | null;
+  profitLossUrl: string | null;
+  cashFlowUrl: string | null;
+  auditorReportUrl: string | null;
+  taxFilingUrl: string | null;
+  // Metadata
+  uploadDate: string | null;
+  uploadedBy: string | null;
+  status: string | null;
+  version: string | null;
+  fileSize: string | null;
+  fileType: string | null;
+  downloadUrl: string | null;
+  // Financial metrics
   revenue: number;
-  profit: number;
+  expenses: number;
+  ebitda: number;
+  netProfit: number;
   assets: number;
   liabilities: number;
+  equity: number;
+  operatingCashFlow: number;
+  capex: number;
+  debt: number;
+  // Legacy fields
+  year: number;
+  profit: number;
   documentUrl: string | null;
   isVerified: boolean;
   createdAt: string;
@@ -106,10 +150,17 @@ export interface FinancialStatement {
 export interface Certificate {
   id: string;
   companyId: string;
-  name: string;
+  certificateName: string | null;
+  certificateNumber: string | null;
   issuingAuthority: string;
   issueDate: string;
   expiryDate: string | null;
+  status: string | null;
+  verificationUrl: string | null;
+  pdfUrl: string | null;
+  thumbnailUrl: string | null;
+  description: string | null;
+  name: string;
   documentUrl: string;
   isVerified: boolean;
   createdAt: string;
@@ -120,9 +171,22 @@ export interface Video {
   companyId: string;
   title: string;
   description: string | null;
-  url: string;
+  duration: string | null;
+  videoUrl: string;
   thumbnailUrl: string | null;
-  duration: number | null;
+  uploadDate: string | null;
+  category: string | null;
+  views: number | null;
+  likes: number | null;
+  comments: number | null;
+  shares: number | null;
+  language: string | null;
+  resolution: string | null;
+  status: string | null;
+  transcriptSummary: string | null;
+  speaker: string | null;
+  url: string;
+  durationSeconds: number | null;
   createdAt: string;
 }
 
@@ -423,29 +487,65 @@ export interface FreeCompanyResponse {
 export interface PremiumCompanyResponse {
   companyId: string;
   companyName: string;
+  logoUrl: string | null;
+  // Identifiers
   cin: string | null;
   gstin: string | null;
   pan: string | null;
   registrationNumber: string | null;
+  companyRegistrationNumber: string | null;
+  // Industry & Classification
   industry: string | null;
   subSector: string | null;
   businessType: string | null;
+  businessModel: string | null;
+  companyStage: string | null;
+  // Incorporation & Age
   incorporationYear: number | null;
   companyAge: number | null;
+  // Location
   state: string | null;
   city: string | null;
   address: string | null;
+  headquarter: string | null;
+  numBranches: number | null;
+  // Contact
   email: string | null;
+  phoneNumber: string | null;
   website: string | null;
+  linkedinUrl: string | null;
+  twitterUrl: string | null;
+  // Size & Revenue
   employeeRange: string | null;
+  employeeCount: number | null;
+  annualRevenue: string | null;
   revenueRange: string | null;
+  totalFunding: string | null;
+  investors: string | null;
+  // Risk & Verification
   riskScore: string | null;
   verified: boolean;
-  locked: boolean;            // Always false for premium users
+  locked: boolean;
+  // Description & Brand
   description: string | null;
-  logoUrl: string | null;
+  mission: string | null;
+  vision: string | null;
+  cultureSummary: string | null;
+  // Leadership
   keyExecutives: Array<Record<string, string>>;
+  ceoName: string | null;
+  ctoName: string | null;
+  founders: string | null;
+  // Products & Services
+  products: string | null;
+  services: string | null;
+  technologiesUsed: string | null;
+  // Certifications & Awards
+  certificationsOverview: string | null;
+  awards: string | null;
+  // Shareholding
   shareholding: Array<Record<string, unknown>>;
+  // Data
   financials: FinancialStatement[];
   certificates: Certificate[];
   videos: Video[];
@@ -454,6 +554,7 @@ export interface PremiumCompanyResponse {
   canDownload: boolean;
   companyUrl: string | null;
   status: string;
+  dashboardStatus: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -464,6 +565,72 @@ export interface PremiumCompanyResponse {
  * locked === false → PremiumCompanyResponse (full)
  */
 export type CompanyResponse = FreeCompanyResponse | PremiumCompanyResponse;
+
+/**
+ * CompanyDto — summary DTO returned from CRUD and admin endpoints.
+ */
+export interface CompanyDto {
+  id: string;
+  publicCompanyId: string;
+  name: string;
+  sector: string | null;
+  state: string | null;
+  city: string | null;
+  companyType: string | null;
+  incorporationYear: number | null;
+  description: string | null;
+  website: string | null;
+  logoUrl?: string | null;
+  status: CompanyStatus;
+  createdBy: string;
+  createdByName?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ─────────────────────── Company Workflow / Listing Management ───────────────────────
+
+/**
+ * CompanyDetailDto — returned for owner/admin views with full workflow details.
+ */
+export interface CompanyDetailDto {
+  id: string;
+  publicCompanyId: string;
+  name: string;
+  sector: string | null;
+  state: string | null;
+  city: string | null;
+  companyType: string | null;
+  incorporationYear: number | null;
+  description: string | null;
+  website: string | null;
+  logoUrl: string | null;
+  status: CompanyStatus;
+  createdBy: string;
+  approvedBy: string | null;
+  approvedAt: string | null;
+  submittedAt: string | null;
+  rejectionComment: string | null;
+  listingExpiresAt: string | null;
+  isPubliclyVisible: boolean;
+  hasActiveListingMembership: boolean;
+  profile?: CompanyProfile | null;
+  financials?: FinancialStatement[];
+  certificates?: Certificate[];
+  videos?: Video[];
+  financialDataJson?: string | null;
+  certificatesDataJson?: string | null;
+  videosDataJson?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Review request payload for admin reject.
+ */
+export interface ReviewRequest {
+  comment?: string;
+}
 
 // ─────────────────────── Search ───────────────────────
 

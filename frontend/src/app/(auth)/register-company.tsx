@@ -166,7 +166,22 @@ export default function RegisterCompanyScreen() {
       // Navigate to company dashboard
       router.replace("/(company)/dashboard");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Registration failed. Please try again.";
+      // Extract meaningful error from Axios response
+      let message = "Registration failed. Please try again.";
+      if (err && typeof err === "object" && "response" in err) {
+        const axiosErr = err as { response?: { data?: { detail?: string; errors?: Record<string, string> } } };
+        const data = axiosErr.response?.data;
+        if (data?.errors) {
+          const fieldMessages = Object.entries(data.errors)
+            .map(([field, msg]) => `${field}: ${msg}`)
+            .join("\n");
+          message = `Validation failed:\n${fieldMessages}`;
+        } else if (data?.detail) {
+          message = data.detail;
+        }
+      } else if (err instanceof Error) {
+        message = err.message;
+      }
       setApiError(message);
     } finally {
       setIsLoading(false);
@@ -319,14 +334,26 @@ export default function RegisterCompanyScreen() {
               <Text className="text-xl font-extrabold text-ink mb-1">Review & Submit</Text>
               <Text className="text-muted text-sm mb-5">Please review your information before submitting</Text>
 
+              {/* Account */}
               <View className="bg-bg rounded-lg p-4 mb-4">
-                <Text className="font-bold text-ink mb-2">Account</Text>
+                <View className="flex-row items-center justify-between mb-2">
+                  <Text className="font-bold text-ink">Account</Text>
+                  <TouchableOpacity onPress={() => setStep(0)} className="bg-navy/10 px-3 py-1.5 rounded-lg active:opacity-70">
+                    <Text className="text-navy font-semibold text-sm">Edit</Text>
+                  </TouchableOpacity>
+                </View>
                 <Text className="text-muted text-sm">Email: {form.email}</Text>
                 <Text className="text-muted text-sm">Mobile: {form.mobile}</Text>
               </View>
 
+              {/* Company */}
               <View className="bg-bg rounded-lg p-4 mb-4">
-                <Text className="font-bold text-ink mb-2">Company</Text>
+                <View className="flex-row items-center justify-between mb-2">
+                  <Text className="font-bold text-ink">Company</Text>
+                  <TouchableOpacity onPress={() => setStep(1)} className="bg-navy/10 px-3 py-1.5 rounded-lg active:opacity-70">
+                    <Text className="text-navy font-semibold text-sm">Edit</Text>
+                  </TouchableOpacity>
+                </View>
                 <Text className="text-muted text-sm">Name: {form.legalCompanyName}</Text>
                 {form.brandName ? <Text className="text-muted text-sm">Brand: {form.brandName}</Text> : null}
                 <Text className="text-muted text-sm">Type: {form.companyType}</Text>
@@ -335,20 +362,38 @@ export default function RegisterCompanyScreen() {
                 {form.gstNumber ? <Text className="text-muted text-sm">GST: {form.gstNumber}</Text> : null}
               </View>
 
+              {/* Office & Contact */}
               <View className="bg-bg rounded-lg p-4 mb-4">
-                <Text className="font-bold text-ink mb-2">Office & Contact</Text>
+                <View className="flex-row items-center justify-between mb-2">
+                  <Text className="font-bold text-ink">Office & Contact</Text>
+                  <TouchableOpacity onPress={() => setStep(2)} className="bg-navy/10 px-3 py-1.5 rounded-lg active:opacity-70">
+                    <Text className="text-navy font-semibold text-sm">Edit</Text>
+                  </TouchableOpacity>
+                </View>
                 <Text className="text-muted text-sm">{form.addressLine1}, {form.city}, {form.state} - {form.pinCode}</Text>
                 {form.officialEmail ? <Text className="text-muted text-sm">Email: {form.officialEmail}</Text> : null}
               </View>
 
+              {/* Authorized Representative */}
               <View className="bg-bg rounded-lg p-4 mb-4">
-                <Text className="font-bold text-ink mb-2">Authorized Representative</Text>
+                <View className="flex-row items-center justify-between mb-2">
+                  <Text className="font-bold text-ink">Authorized Representative</Text>
+                  <TouchableOpacity onPress={() => setStep(3)} className="bg-navy/10 px-3 py-1.5 rounded-lg active:opacity-70">
+                    <Text className="text-navy font-semibold text-sm">Edit</Text>
+                  </TouchableOpacity>
+                </View>
                 <Text className="text-muted text-sm">{form.authorizedRepName} ({form.authorizedRepDesignation})</Text>
               </View>
 
+              {/* Business Info */}
               {form.productsServices && (
                 <View className="bg-bg rounded-lg p-4 mb-4">
-                  <Text className="font-bold text-ink mb-2">Business Info</Text>
+                  <View className="flex-row items-center justify-between mb-2">
+                    <Text className="font-bold text-ink">Business Info</Text>
+                    <TouchableOpacity onPress={() => setStep(3)} className="bg-navy/10 px-3 py-1.5 rounded-lg active:opacity-70">
+                      <Text className="text-navy font-semibold text-sm">Edit</Text>
+                    </TouchableOpacity>
+                  </View>
                   <Text className="text-muted text-sm">{form.productsServices}</Text>
                 </View>
               )}
@@ -381,10 +426,19 @@ export default function RegisterCompanyScreen() {
               </View>
             )}
 
-            {/* Submit button */}
-            <Button variant="gold" size="xl" loading={isLoading} onPress={handleSubmit} style={{ width: "100%", marginBottom: 16 }}>
-              Register Company
-            </Button>
+            {/* Back & Submit buttons */}
+            <View className="flex-row gap-x-3 mt-2 mb-8">
+              <View className="flex-1">
+                <Button variant="outline" size="lg" onPress={() => setStep(3)}>
+                  ← Back
+                </Button>
+              </View>
+              <View className="flex-1">
+                <Button variant="gold" size="lg" loading={isLoading} onPress={handleSubmit}>
+                  Register Company
+                </Button>
+              </View>
+            </View>
           </View>
         );
 

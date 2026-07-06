@@ -9,6 +9,8 @@ import type {
   AuthResponse,
   Certificate,
   Company,
+  CompanyDetailDto,
+  CompanyDto,
   CompanyRegistrationRequest,
   CompanyResponse,
   CreateSubscriptionResponse,
@@ -24,6 +26,7 @@ import type {
   PremiumCompanyResponse,
   RegisterRequest,
   ResearchMemberRegistrationRequest,
+  ReviewRequest,
   SearchFilters,
   User,
   UserMembershipResponse,
@@ -225,8 +228,8 @@ function mapCompanyDetail(raw: Record<string, unknown>): Company {
     userId: (c.createdBy as string) ?? "",
     name: c.name as string,
     legalName: c.name as string,
-    cin: null,
-    gstin: null,
+    cin: (c.cin as string) ?? null,
+    gstin: (c.gstin as string) ?? null,
     sector: c.sector as string,
     subSector: null,
     state: c.state as string,
@@ -243,13 +246,30 @@ function mapCompanyDetail(raw: Record<string, unknown>): Company {
       id: "",
       companyId: c.id as string,
       foundedYear: null,
-      employeeCount: (profileRaw?.employeeCount as number) ?? null,
+      employeeCount: (c.employeeCount as number) ?? null,
       website: (c.website as string) ?? null,
       description: (profileRaw?.about as string) ?? (c.description as string) ?? null,
       logoUrl: (c.logoUrl as string) ?? null,
       coverImageUrl: null,
-      linkedinUrl: null,
-      twitterUrl: null,
+      linkedinUrl: (c.linkedinProfile as string) ?? (c.linkedinUrl as string) ?? null,
+      twitterUrl: (c.twitterUrl as string) ?? null,
+      phoneNumber: (c.phoneNumber as string) ?? null,
+      headquarter: (c.headquarter as string) ?? null,
+      businessModel: (c.businessModel as string) ?? null,
+      companyStage: (c.companyStage as string) ?? null,
+      mission: (c.mission as string) ?? null,
+      vision: (c.vision as string) ?? null,
+      cultureSummary: (c.cultureSummary as string) ?? null,
+      ceoName: (c.ceoName as string) ?? null,
+      ctoName: (c.ctoName as string) ?? null,
+      founders: (c.founders as string) ?? null,
+      totalFunding: (c.totalFunding as string) ?? null,
+      investors: (c.investors as string) ?? null,
+      technologiesUsed: (c.technologiesUsed as string) ?? null,
+      awards: (c.awards as string) ?? null,
+      certificationsOverview: (c.certifications as string) ?? null,
+      products: (c.productsServices as string) ?? (c.products as string) ?? null,
+      services: (c.services as string) ?? null,
       createdAt: (c.createdAt as string) ?? "",
       updatedAt: (c.updatedAt as string) ?? "",
     },
@@ -262,14 +282,36 @@ function mapCompanyDetail(raw: Record<string, unknown>): Company {
 }
 
 function mapFinancial(f: Record<string, unknown>): FinancialStatement {
+  const netProfit = toNumber(f.netProfit) || toNumber(f.profit);
   return {
-    id: f.id as string,
+    id: (f.id as string) ?? "",
     companyId: (f.companyId as string) ?? "",
-    year: parseFinancialYear(f.financialYear as string),
+    financialYear: (f.financialYear as string) ?? "",
+    balanceSheetUrl: (f.balanceSheetUrl as string) ?? null,
+    profitLossUrl: (f.profitLossUrl as string) ?? null,
+    cashFlowUrl: (f.cashFlowUrl as string) ?? null,
+    auditorReportUrl: (f.auditorReportUrl as string) ?? null,
+    taxFilingUrl: (f.taxFilingUrl as string) ?? null,
+    uploadDate: (f.uploadDate as string) ?? null,
+    uploadedBy: (f.uploadedBy as string) ?? null,
+    status: (f.status as string) ?? null,
+    version: (f.version as string) ?? null,
+    fileSize: (f.fileSize as string) ?? null,
+    fileType: (f.fileType as string) ?? null,
+    downloadUrl: (f.downloadUrl as string) ?? null,
     revenue: toNumber(f.revenue),
-    profit: toNumber(f.profit),
+    expenses: toNumber(f.expenses),
+    ebitda: toNumber(f.ebitda),
+    netProfit: netProfit,
     assets: toNumber(f.assets),
     liabilities: toNumber(f.liabilities),
+    equity: toNumber(f.equity),
+    operatingCashFlow: toNumber(f.operatingCashFlow),
+    capex: toNumber(f.capex),
+    debt: toNumber(f.debt),
+    // Legacy fields
+    year: parseFinancialYear(f.financialYear as string),
+    profit: netProfit,
     documentUrl: (f.fileUrl as string) ?? null,
     isVerified: (f.verified as boolean) ?? false,
     createdAt: (f.uploadedAt as string) ?? "",
@@ -278,13 +320,21 @@ function mapFinancial(f: Record<string, unknown>): FinancialStatement {
 
 function mapCertificate(c: Record<string, unknown>): Certificate {
   return {
-    id: c.id as string,
+    id: (c.id as string) ?? "",
     companyId: (c.companyId as string) ?? "",
-    name: `CA Certificate`,
-    issuingAuthority: (c.caName as string) ?? "Chartered Accountant",
-    issueDate: "",
-    expiryDate: null,
-    documentUrl: (c.certificateUrl as string) ?? "",
+    certificateName: (c.certificateName as string) ?? null,
+    certificateNumber: (c.certificateNumber as string) ?? null,
+    issuingAuthority: (c.issuingAuthority as string) ?? "Chartered Accountant",
+    issueDate: (c.issueDate as string) ?? "",
+    expiryDate: (c.expiryDate as string) ?? null,
+    status: (c.status as string) ?? null,
+    verificationUrl: (c.verificationUrl as string) ?? null,
+    pdfUrl: (c.pdfUrl as string) ?? null,
+    thumbnailUrl: (c.thumbnailUrl as string) ?? null,
+    description: (c.description as string) ?? null,
+    // Legacy fields
+    name: (c.certificateName as string) ?? "CA Certificate",
+    documentUrl: (c.certificateUrl as string) ?? (c.pdfUrl as string) ?? "",
     isVerified: (c.verified as boolean) ?? false,
     createdAt: (c.uploadedAt as string) ?? "",
   };
@@ -292,13 +342,27 @@ function mapCertificate(c: Record<string, unknown>): Certificate {
 
 function mapVideo(v: Record<string, unknown>): Video {
   return {
-    id: v.id as string,
+    id: (v.id as string) ?? "",
     companyId: (v.companyId as string) ?? "",
     title: (v.title as string) ?? "Company Video",
-    description: null,
-    url: (v.videoUrl as string) ?? "",
+    description: (v.description as string) ?? null,
+    duration: (v.duration as string) ?? null,
+    videoUrl: (v.videoUrl as string) ?? "",
     thumbnailUrl: (v.thumbnailUrl as string) ?? null,
-    duration: (v.durationSeconds as number) ?? null,
+    uploadDate: (v.uploadDate as string) ?? null,
+    category: (v.category as string) ?? null,
+    views: (v.views as number) ?? null,
+    likes: (v.likes as number) ?? null,
+    comments: (v.comments as number) ?? null,
+    shares: (v.shares as number) ?? null,
+    language: (v.language as string) ?? null,
+    resolution: (v.resolution as string) ?? null,
+    status: (v.status as string) ?? null,
+    transcriptSummary: (v.transcriptSummary as string) ?? null,
+    speaker: (v.speaker as string) ?? null,
+    // Legacy fields
+    url: (v.videoUrl as string) ?? "",
+    durationSeconds: (v.durationSeconds as number) ?? null,
     createdAt: (v.uploadedAt as string) ?? "",
   };
 }
@@ -527,6 +591,91 @@ export const companiesApi = {
     );
     return data;
   },
+
+  /**
+   * Download a company report as a PDF.
+   * Uses fetch directly (not axios) to handle blob responses without
+   * interference from the JSON response interceptor.
+   */
+  downloadReport: async (companyId: string): Promise<void> => {
+    const token = await getAccessToken();
+    if (!token) {
+      throw new Error("Authentication required. Please sign in.");
+    }
+
+    const response = await fetch(`${API_BASE_URL}/companies/${companyId}/report`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      let errorMessage = "Failed to download report";
+      try {
+        const errorBody = await response.text();
+        const parsed = JSON.parse(errorBody);
+        errorMessage = parsed.detail || parsed.message || errorMessage;
+      } catch {
+        // Use default error message
+      }
+      throw new Error(errorMessage);
+    }
+
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = `company-report-${companyId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    // Clean up the blob URL after a short delay
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+  },
+
+  // ──────── Company Workflow Endpoints ────────
+
+  /**
+   * Get the current user's companies with full workflow details.
+   */
+  getMyCompanyDetails: async (): Promise<CompanyDetailDto[]> => {
+    const { data } = await api.get("/companies/my/details");
+    return data;
+  },
+
+  /**
+   * Get company detail for owner view — shows all statuses.
+   */
+  getOwnerView: async (id: string): Promise<CompanyDetailDto> => {
+    const { data } = await api.get(`/companies/${id}/owner-view`);
+    return data;
+  },
+
+  /**
+   * Submit a DRAFT company for admin review.
+   */
+  submitForReview: async (companyId: string): Promise<CompanyDto> => {
+    const { data } = await api.post(`/companies/${companyId}/submit`);
+    return data;
+  },
+
+  /**
+   * Resubmit a REJECTED company for admin review after making corrections.
+   */
+  resubmitForReview: async (companyId: string): Promise<CompanyDto> => {
+    const { data } = await api.post(`/companies/${companyId}/resubmit`);
+    return data;
+  },
+
+  /**
+   * Activate listing membership (after ₹500+GST payment).
+   */
+  activateListingMembership: async (companyId: string): Promise<CompanyDto> => {
+    const { data } = await api.post(`/companies/${companyId}/activate-listing`);
+    return data;
+  },
 };
 
 // ─────────────────────── Memberships API ───────────────────────
@@ -684,28 +833,79 @@ export const grievancesApi = {
 // ─────────────────────── Admin API ───────────────────────
 
 export const adminApi = {
+  getMembers: async (
+    page = 0,
+    size = 20
+  ): Promise<{ data: any[] }> => {
+    const { data } = await api.get("/admin/members", {
+      params: { page, size },
+    });
+    return { data };
+  },
+
+  getMemberCount: async (): Promise<{ count: number }> => {
+    const { data } = await api.get("/admin/members/count");
+    return data;
+  },
+
+  getMember: async (id: string): Promise<any> => {
+    const { data } = await api.get(`/admin/members/${id}`);
+    return data;
+  },
+
+  updateMember: async (
+    id: string,
+    payload: Record<string, unknown>
+  ): Promise<any> => {
+    const { data } = await api.put(`/admin/members/${id}`, payload);
+    return data;
+  },
+
+  updateMemberMembership: async (
+    id: string,
+    payload: Record<string, unknown>
+  ): Promise<any> => {
+    const { data } = await api.put(`/admin/members/${id}/membership`, payload);
+    return data;
+  },
+
   getPendingCompanies: async (
-    page = 1,
-    limit = 10
-  ): Promise<PaginatedResponse<Company>> => {
+    page = 0,
+    size = 20
+  ): Promise<CompanyDto[]> => {
     const { data } = await api.get("/admin/companies/pending", {
-      params: { page, limit },
+      params: { page, size },
     });
     return data;
   },
 
-  approveCompany: async (id: string): Promise<ApiResponse<Company>> => {
+  getPendingCompaniesWithDetails: async (): Promise<CompanyDetailDto[]> => {
+    const { data } = await api.get("/admin/companies/pending-with-details");
+    return data;
+  },
+
+  approveCompany: async (id: string): Promise<CompanyDto> => {
     const { data } = await api.post(`/admin/companies/${id}/approve`);
     return data;
   },
 
   rejectCompany: async (
     id: string,
-    reason: string
-  ): Promise<ApiResponse<Company>> => {
+    comment?: string
+  ): Promise<CompanyDto> => {
     const { data } = await api.post(`/admin/companies/${id}/reject`, {
-      reason,
+      comment,
     });
+    return data;
+  },
+
+  suspendCompany: async (id: string): Promise<CompanyDto> => {
+    const { data } = await api.post(`/admin/companies/${id}/suspend`);
+    return data;
+  },
+
+  reactivateCompany: async (id: string): Promise<CompanyDto> => {
+    const { data } = await api.post(`/admin/companies/${id}/reactivate`);
     return data;
   },
 
@@ -770,6 +970,58 @@ export const adminApi = {
     const { data } = await api.get("/admin/audit-logs", {
       params: { page, limit },
     });
+    return data;
+  },
+
+  // ── Company Members ──
+
+  getCompanyMembers: async (
+    page = 0,
+    size = 20
+  ): Promise<{ data: any[] }> => {
+    const { data } = await api.get("/admin/company-members", {
+      params: { page, size },
+    });
+    return { data };
+  },
+
+  getCompanyMemberCount: async (): Promise<{ count: number }> => {
+    const { data } = await api.get("/admin/company-members/count");
+    return data;
+  },
+
+  getCompanyMember: async (id: string): Promise<any> => {
+    const { data } = await api.get(`/admin/company-members/${id}`);
+    return data;
+  },
+
+  updateCompanyMember: async (
+    id: string,
+    payload: Record<string, unknown>
+  ): Promise<any> => {
+    const { data } = await api.put(`/admin/company-members/${id}`, payload);
+    return data;
+  },
+
+  updateCompanyListing: async (
+    userId: string,
+    companyId: string,
+    payload: Record<string, unknown>
+  ): Promise<any> => {
+    const { data } = await api.put(
+      `/admin/company-members/${userId}/companies/${companyId}`,
+      payload
+    );
+    return data;
+  },
+
+  suspendCompanyListing: async (
+    userId: string,
+    companyId: string
+  ): Promise<any> => {
+    const { data } = await api.post(
+      `/admin/company-members/${userId}/companies/${companyId}/suspend`
+    );
     return data;
   },
 };

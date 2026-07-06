@@ -58,6 +58,18 @@ public class GlobalExceptionHandler {
         return detail;
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ProblemDetail handleIllegalState(IllegalStateException e) {
+        log.warn("Illegal state: {}", e.getMessage());
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ProblemDetail handleIllegalArgument(IllegalArgumentException e) {
+        log.warn("Illegal argument: {}", e.getMessage());
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleGeneric(Exception e) {
         log.error("Unexpected error", e);

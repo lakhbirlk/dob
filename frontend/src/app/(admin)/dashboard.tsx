@@ -6,6 +6,8 @@ import { Badge } from "@/components/Badge";
 import { colors } from "@/theme/colors";
 
 const MODULES = [
+  { title: "Research Members", icon: "👥", desc: "View and manage member subscriptions", route: "/(admin)/members", color: "#1E2761" },
+  { title: "Company Members", icon: "🏢", desc: "Manage company listings and accounts", route: "/(admin)/company-members", color: "#0D9488" },
   { title: "Pending Approvals", icon: "📋", desc: "Review and approve company listings", count: "5", route: "/(admin)/pending-approvals", color: "#E8B84B" },
   { title: "Refund Management", icon: "💰", desc: "Process refund requests", count: "2", route: "/(admin)/refunds", color: "#DC2626" },
   { title: "Grievance Management", icon: "📝", desc: "Handle user grievances", count: "3", route: "/(admin)/grievances", color: "#2563EB" },

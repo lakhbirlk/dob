@@ -104,7 +104,7 @@ const MOCK_COMPANIES: Company[] = [
     companyType: "Private Limited",
     incorporationYear: 2020,
     description: "TechVentures India is a leading SaaS company providing enterprise solutions for supply chain management. Trusted by 500+ enterprises across India.",
-    status: CompanyStatus.APPROVED,
+    status: CompanyStatus.APPROVED_ACTIVE,
     verified: true,
     featured: true,
     profile: {
@@ -204,7 +204,7 @@ const MOCK_COMPANIES: Company[] = [
       companyType: ["Private Limited", "Public Limited", "LLP", "Partnership", "Proprietorship"][i % 5],
       incorporationYear: foundedYear,
       description: `${name} is a leading company in the ${sector.toLowerCase()} sector providing high-quality products and services across India.`,
-      status: [CompanyStatus.APPROVED, CompanyStatus.PENDING, CompanyStatus.APPROVED, CompanyStatus.APPROVED, CompanyStatus.APPROVED][i % 5],
+      status: [CompanyStatus.APPROVED_ACTIVE, CompanyStatus.PENDING_REVIEW, CompanyStatus.APPROVED_ACTIVE, CompanyStatus.APPROVED_MEMBERSHIP_PENDING, CompanyStatus.DRAFT][i % 5],
       verified: i % 3 !== 0,
       featured: i < 5,
       profile: {

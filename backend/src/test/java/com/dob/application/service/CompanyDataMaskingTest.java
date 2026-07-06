@@ -6,6 +6,7 @@ import com.dob.domain.repository.CompanyRepository;
 import com.dob.domain.repository.MembershipRepository;
 import com.dob.domain.repository.UserRepository;
 import com.dob.infrastructure.security.UserPrincipal;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -58,7 +59,7 @@ class CompanyDataMaskingTest {
 
     @BeforeEach
     void setUp() {
-        companyService = new CompanyService(companyRepository, membershipRepository, userRepository);
+        companyService = new CompanyService(companyRepository, membershipRepository, userRepository, new ObjectMapper());
 
         approvedCompany = Company.builder()
             .id(COMPANY_UUID)
@@ -71,7 +72,8 @@ class CompanyDataMaskingTest {
             .incorporationYear(2016)
             .description("A leading technology company specializing in enterprise software solutions.")
             .website("https://techventures.in")
-            .status(Company.CompanyStatus.APPROVED)
+            .status(Company.CompanyStatus.APPROVED_ACTIVE)
+            .listingExpiresAt(java.time.LocalDate.now().plusYears(1))
             .createdBy(UUID.randomUUID())
             .createdAt(Instant.now())
             .updatedAt(Instant.now())
@@ -86,7 +88,7 @@ class CompanyDataMaskingTest {
             .city("Mumbai")
             .companyType("Private Limited")
             .incorporationYear(2020)
-            .status(Company.CompanyStatus.PENDING)
+            .status(Company.CompanyStatus.DRAFT)
             .createdBy(UUID.randomUUID())
             .createdAt(Instant.now())
             .updatedAt(Instant.now())
@@ -175,7 +177,7 @@ class CompanyDataMaskingTest {
         }
 
         @Test
-        @DisplayName("Non-approved (pending) company returns error for any user")
+        @DisplayName("Non-approved (draft) company returns error for any user")
         void pendingCompanyReturnsError() {
             lenient().when(companyRepository.findById(any())).thenReturn(Optional.of(pendingCompany));
 

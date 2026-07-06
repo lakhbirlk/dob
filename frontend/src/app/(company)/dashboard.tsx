@@ -23,12 +23,15 @@ export default function CompanyDashboard() {
     );
   }
 
-  const companyStatus: CompanyStatus = CompanyStatus.PENDING; // TODO: Fetch actual company data
+  const companyStatus: CompanyStatus = CompanyStatus.DRAFT; // TODO: Fetch actual company data from API
 
-  const statusColors: Record<CompanyStatus, string> = {
-    [CompanyStatus.APPROVED]: "text-green",
-    [CompanyStatus.PENDING]: "text-gold",
+  const statusColors: Record<string, string> = {
+    [CompanyStatus.DRAFT]: "text-muted",
+    [CompanyStatus.PENDING_REVIEW]: "text-gold",
     [CompanyStatus.REJECTED]: "text-red",
+    [CompanyStatus.APPROVED_MEMBERSHIP_PENDING]: "text-blue",
+    [CompanyStatus.APPROVED_ACTIVE]: "text-green",
+    [CompanyStatus.MEMBERSHIP_EXPIRED]: "text-muted",
     [CompanyStatus.SUSPENDED]: "text-red",
   };
 
@@ -114,7 +117,7 @@ export default function CompanyDashboard() {
         </View>
 
         {/* Pending Approval Notice */}
-        {companyStatus === CompanyStatus.PENDING && (
+        {companyStatus === CompanyStatus.PENDING_REVIEW && (
           <View className="mx-4 mt-6">
             <Card variant="bordered" padding="lg">
               <View className="items-center">

@@ -45,13 +45,13 @@ public record CompanyRegistrationRequest(
     @NotBlank String dateOfIncorporation,
 
     @Schema(description = "CIN (Company Identification Number)", example = "U72300KA2016PTC123456")
-    @Size(min = 21, max = 21) String cin,
+    @Size(max = 21) String cin,
 
     @Schema(description = "GST Number", example = "29ABCDE1234F1Z5")
     @Size(max = 15) String gstNumber,
 
     @Schema(description = "PAN of the company", example = "AABCT1234E")
-    @Size(min = 10, max = 10) String pan,
+    @Size(max = 10) String pan,
 
     @Schema(description = "TAN (optional)", example = "BANP12345A")
     @Size(max = 10) String tan,

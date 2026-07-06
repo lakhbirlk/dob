@@ -5,6 +5,8 @@ node_modules/
 dist/
 .gradle/
 build/
+target/
+*.lst
 
 # Environment
 .env
