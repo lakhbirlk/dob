@@ -26,6 +26,9 @@ public class PaymentEntity {
     @Column(name = "company_id")
     private UUID companyId;
 
+    @Column(name = "plan_id", length = 20)
+    private String planId;
+
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
 

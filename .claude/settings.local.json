@@ -75,7 +75,19 @@
       "PowerShell($proc = Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue; if \\($proc\\) { $ownerPid = $proc.OwningProcess; Stop-Process -Id $ownerPid -Force; Write-Output \"Killed PID $ownerPid on port 8080\" } else { Write-Output \"Port 8080 is free\" })",
       "PowerShell($be = Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue; if \\($be\\) { Stop-Process -Id $be.OwningProcess -Force; Start-Sleep -Seconds 2; Write-Output \"Killed old process, port freed\" } else { Write-Output \"Port 8080 is free\" })",
       "PowerShell(Start-Sleep -Seconds 15; Select-String -Path C:\\\\Users\\\\lakhbir\\\\Desktop\\\\dob\\\\backend\\\\target\\\\backend-stdout.log -Pattern \"Started DobApplication\" -SimpleMatch | ForEach-Object { Write-Output \"✅ Backend started\"; $be = Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue; if \\($be\\) { Write-Output \"✅ Port 8080 \\(PID $\\($be.OwningProcess\\)\\)\" } })",
-      "PowerShell(try { $h = Invoke-RestMethod -Uri \"http://localhost:8080/actuator/health\" -Method Get -TimeoutSec 5; Write-Output \"✅ Health: $\\($h.status\\)\"; $c = Invoke-RestMethod -Uri \"http://localhost:8080/api/companies?page=0&size=2\" -Method Get; Write-Output \"✅ API: $\\($c.totalElements\\) companies \\(masked\\)\" } catch { Write-Output \"❌ $\\($_.Exception.Message\\)\" })"
+      "PowerShell(try { $h = Invoke-RestMethod -Uri \"http://localhost:8080/actuator/health\" -Method Get -TimeoutSec 5; Write-Output \"✅ Health: $\\($h.status\\)\"; $c = Invoke-RestMethod -Uri \"http://localhost:8080/api/companies?page=0&size=2\" -Method Get; Write-Output \"✅ API: $\\($c.totalElements\\) companies \\(masked\\)\" } catch { Write-Output \"❌ $\\($_.Exception.Message\\)\" })",
+      "Bash(git push *)",
+      "Bash(git branch *)",
+      "Bash(java --version)",
+      "Bash(npm --version)",
+      "PowerShell(Get-Command *)",
+      "WebSearch",
+      "WebFetch(domain:aws.amazon.com)",
+      "WebFetch(domain:instances.vantage.sh)",
+      "Bash(mvn test *)",
+      "Bash(docker info *)",
+      "Bash(npx *)",
+      "Read(//c/Users/lakhbir/Desktop/dob/frontend/**)"
     ]
   }
 }

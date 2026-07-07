@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
 import { useState, useCallback } from "react";
 import { useLocalSearchParams, router } from "expo-router";
 import { Card } from "@/components/Card";
@@ -9,7 +9,7 @@ import { UpgradeBottomSheet } from "@/components/UpgradeBottomSheet";
 import { Divider } from "@/components/Divider";
 import { useCompanyDetail } from "@/hooks/useCompanies";
 import { useAuthStore } from "@/store/authStore";
-import { companiesApi } from "@/services/api";
+import { companiesApi, unlockApi } from "@/services/api";
 import type {
   FreeCompanyResponse,
   PremiumCompanyResponse,
@@ -32,7 +32,7 @@ function formatNumber(v?: number | null) {
 
 export default function CompanyDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: response, isLoading } = useCompanyDetail(id);
+  const { data: response, isLoading, refetch } = useCompanyDetail(id);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
@@ -40,8 +40,29 @@ export default function CompanyDetailScreen() {
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     financials: false,
   });
+  const [isUnlocking, setIsUnlocking] = useState(false);
   const { isAuthenticated, user } = useAuthStore();
   const isAdmin = user?.role === UserRole.ADMIN || user?.role === UserRole.SUPER_ADMIN;
+
+  const handleUnlock = useCallback(async () => {
+    if (!id || isUnlocking) return;
+    setIsUnlocking(true);
+    try {
+      const result = await unlockApi.unlockCompany(id);
+      if (result.status === "SUCCESS") {
+        Alert.alert("Company Unlocked!", result.message);
+        refetch();
+      } else if (result.status === "INSUFFICIENT_CREDITS") {
+        setShowUpgrade(true);
+      } else if (result.status === "ALREADY_UNLOCKED") {
+        refetch();
+      }
+    } catch (err) {
+      Alert.alert("Error", err instanceof Error ? err.message : "Failed to unlock company");
+    } finally {
+      setIsUnlocking(false);
+    }
+  }, [id, isUnlocking, refetch]);
 
   const toggleSection = useCallback((key: string) => {
     setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
@@ -151,10 +172,21 @@ export default function CompanyDetailScreen() {
               Get access to CA-certified financials, director details, shareholding patterns, and AI-powered risk analysis.
             </Text>
             <View className="flex-row items-center gap-x-2 mt-2 mb-5">
-              <Badge variant="gold"><Text className="text-xs font-extrabold">₹2,500/month</Text></Badge>
-              <Badge variant="success"><Text className="text-xs font-extrabold">50 Downloads/mo</Text></Badge>
+              <Badge variant="gold"><Text className="text-xs font-extrabold">1 Credit</Text></Badge>
+              <Badge variant="success"><Text className="text-xs font-extrabold">Permanent Access</Text></Badge>
             </View>
-            <Button variant="gold" size="xl" onPress={() => setShowUpgrade(true)}>Subscribe Now</Button>
+            <Button
+              variant="gold"
+              size="xl"
+              loading={isUnlocking}
+              onPress={handleUnlock}
+              disabled={isUnlocking}
+            >
+              {isUnlocking ? "Unlocking..." : "🔓 Unlock with 1 Credit"}
+            </Button>
+            <TouchableOpacity onPress={() => setShowUpgrade(true)} className="mt-3">
+              <Text className="text-sm text-muted font-semibold underline">Or upgrade your plan for more credits</Text>
+            </TouchableOpacity>
           </Card>
         </View>
 

@@ -11,7 +11,7 @@ public record PaymentSuccessResponse(
     @Schema(description = "Activated membership UUID")
     UUID membershipId,
 
-    @Schema(description = "Plan type that was activated", example = "RESEARCH")
+    @Schema(description = "Plan type that was activated", example = "CREDITS_10")
     String plan,
 
     @Schema(description = "Membership status", example = "ACTIVE")

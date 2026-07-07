@@ -11,6 +11,10 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -23,7 +27,7 @@ public class MembershipController {
     private final PricingProperties pricing;
 
     @GetMapping("/me")
-    @Operation(summary = "Get my membership", description = "Returns the currently authenticated user's active membership details including download limits and usage.")
+    @Operation(summary = "Get my membership", description = "Returns the currently authenticated user's active membership details including credit limits and usage.")
     public MembershipDto getMyMembership(@AuthenticationPrincipal UserPrincipal principal) {
         return membershipRepository.findActiveByUserId(principal.id())
             .map(m -> MembershipDto.builder()
@@ -41,26 +45,46 @@ public class MembershipController {
     }
 
     @GetMapping("/plans")
-    @Operation(summary = "Get pricing plans", description = "Returns current pricing for membership (₹2500 + GST) and company listing (₹500 + GST) with GST breakdown.")
+    @Operation(summary = "Get pricing plans", description = "Returns the 5 research credit plans, the free guest plan, and company listing pricing with GST breakdown.")
     public Map<String, Object> getPlans() {
         BigDecimal gstRate = pricing.getGstRate();
-        BigDecimal membershipAmount = pricing.getMembership();
-        BigDecimal membershipGst = membershipAmount.multiply(gstRate);
-        BigDecimal listingAmount = pricing.getCompanyListing();
-        BigDecimal listingGst = listingAmount.multiply(gstRate);
+
+        // Build credit plans list
+        List<Map<String, Object>> creditPlans = new ArrayList<>();
+        for (PricingProperties.CreditPlan cp : pricing.getCreditPlans()) {
+            BigDecimal gst = cp.getAmount().multiply(gstRate).setScale(2, RoundingMode.HALF_UP);
+            Map<String, Object> plan = new LinkedHashMap<>();
+            plan.put("id", cp.getId());
+            plan.put("name", cp.getName());
+            plan.put("credits", cp.getCredits());
+            plan.put("amount", cp.getAmount());
+            plan.put("gst", gst);
+            plan.put("total", cp.getAmount().add(gst));
+            plan.put("duration", "MONTHLY");
+            creditPlans.add(plan);
+        }
+
+        // Guest plan (free one-time credits for new research members)
+        PricingProperties.CreditPlan guest = pricing.getGuestPlan();
+        Map<String, Object> guestPlan = new LinkedHashMap<>();
+        guestPlan.put("id", guest.getId());
+        guestPlan.put("name", guest.getName());
+        guestPlan.put("credits", guest.getCredits());
+        guestPlan.put("amount", guest.getAmount());
+        guestPlan.put("gst", BigDecimal.ZERO);
+        guestPlan.put("total", BigDecimal.ZERO);
+        guestPlan.put("duration", "ONETIME");
+
+        // Company listing
+        BigDecimal listingGst = pricing.getCompanyListing().multiply(gstRate).setScale(2, RoundingMode.HALF_UP);
 
         return Map.of(
-            "membership", Map.of(
-                "amount", membershipAmount,
-                "gst", membershipGst,
-                "total", membershipAmount.add(membershipGst),
-                "downloadLimit", 50,
-                "duration", "MONTHLY"
-            ),
+            "creditPlans", creditPlans,
+            "guestPlan", guestPlan,
             "companyListing", Map.of(
-                "amount", listingAmount,
+                "amount", pricing.getCompanyListing(),
                 "gst", listingGst,
-                "total", listingAmount.add(listingGst),
+                "total", pricing.getCompanyListing().add(listingGst),
                 "duration", "YEARLY"
             )
         );

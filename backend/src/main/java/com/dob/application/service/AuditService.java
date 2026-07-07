@@ -24,15 +24,23 @@ public class AuditService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void log(UUID userId, UUID companyId, String action, String outcome, String details, String ipAddress) {
+        log(userId, companyId, action, outcome, details, ipAddress, null, null);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void log(UUID userId, UUID companyId, String action, String outcome, String details, String ipAddress,
+                    String userAgent, String transactionId) {
         try {
             auditLogRepository.save(AuditLog.builder()
                 .id(UUID.randomUUID())
                 .userId(userId)
                 .action(action)
                 .companyId(companyId)
+                .transactionId(transactionId)
                 .outcome(outcome)
                 .details(details)
                 .ipAddress(ipAddress)
+                .userAgent(userAgent)
                 .createdAt(Instant.now())
                 .build());
         } catch (Exception e) {

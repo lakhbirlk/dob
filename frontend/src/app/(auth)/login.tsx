@@ -77,7 +77,11 @@ export default function LoginScreen() {
           {params.plan && (
             <View className="bg-white/10 px-4 py-2 rounded-full">
               <Text className="text-white/90 text-sm font-medium">
-                {params.plan === "RESEARCH" ? "🔬 Research Membership" : "🏢 Company Listing"} selected
+                {params.plan === "COMPANY"
+                  ? "🏢 Company Listing"
+                  : params.plan === "GUEST"
+                    ? "🎁 Guest Plan"
+                    : "📊 Research Plan"} selected
               </Text>
             </View>
           )}

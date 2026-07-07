@@ -2,11 +2,13 @@ package com.dob.application.service;
 
 import com.dob.TestTokenProvider;
 import com.dob.application.dto.AuthResponse;
+import com.dob.infrastructure.config.PricingProperties;
 import com.dob.infrastructure.security.JwtProvider;
 import com.dob.application.dto.ResearchMemberRegistrationRequest;
 import com.dob.domain.exception.DomainException;
 import com.dob.domain.model.ResearchMember;
 import com.dob.domain.model.User;
+import com.dob.domain.repository.MembershipRepository;
 import com.dob.domain.repository.ResearchMemberRepository;
 import com.dob.domain.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,16 +40,18 @@ class ResearchMemberRegistrationServiceTest {
 
     @Mock private UserRepository userRepository;
     @Mock private ResearchMemberRepository researchMemberRepository;
+    @Mock private MembershipRepository membershipRepository;
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final JwtProvider jwtProvider = TestTokenProvider.instance();
+    private final PricingProperties pricingProperties = new PricingProperties();
 
     private ResearchMemberRegistrationRequest validRequest;
 
     @BeforeEach
     void setUp() {
         service = new ResearchMemberRegistrationService(
-            userRepository, researchMemberRepository, passwordEncoder, jwtProvider
+            userRepository, researchMemberRepository, membershipRepository, passwordEncoder, jwtProvider, pricingProperties
         );
 
         validRequest = new ResearchMemberRegistrationRequest(

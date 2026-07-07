@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
 import { Card } from "@/components/Card";
 import { Badge } from "@/components/Badge";
 import { colors } from "@/theme/colors";
@@ -9,6 +9,7 @@ interface LockedCompanyCardProps {
   company: FreeCompanyResponse;
   onUnlock: (companyId: string) => void;
   onPress: (companyId: string) => void;
+  isUnlocking?: boolean;
 }
 
 /**
@@ -27,6 +28,7 @@ export const LockedCompanyCard: React.FC<LockedCompanyCardProps> = ({
   company,
   onUnlock,
   onPress,
+  isUnlocking,
 }) => {
   return (
     <TouchableOpacity
@@ -43,7 +45,7 @@ export const LockedCompanyCard: React.FC<LockedCompanyCardProps> = ({
             </Text>
           </View>
           <Badge variant="gold">
-            <Text className="text-[10px] font-extrabold">PREMIUM</Text>
+            <Text className="text-[10px] font-extrabold">LOCKED</Text>
           </Badge>
         </View>
 
@@ -98,12 +100,19 @@ export const LockedCompanyCard: React.FC<LockedCompanyCardProps> = ({
         {/* Unlock CTA */}
         <TouchableOpacity
           onPress={() => onUnlock(company.companyId)}
-          className="flex-row items-center justify-center gap-x-2 bg-gold/10 rounded-lg py-3 border border-gold/30"
+          disabled={isUnlocking}
+          className={`flex-row items-center justify-center gap-x-2 rounded-lg py-3 border ${
+            isUnlocking ? "bg-gold/5 border-gold/20" : "bg-gold/10 border-gold/30"
+          }`}
           activeOpacity={0.7}
         >
-          <Text className="text-lg">🔓</Text>
+          {isUnlocking ? (
+            <ActivityIndicator size="small" color="#C49A35" />
+          ) : (
+            <Text className="text-lg">🔓</Text>
+          )}
           <Text className="text-sm font-bold text-gold-dark">
-            Unlock Full Company Report
+            {isUnlocking ? "Unlocking..." : "Unlock with Credits"}
           </Text>
         </TouchableOpacity>
       </Card>

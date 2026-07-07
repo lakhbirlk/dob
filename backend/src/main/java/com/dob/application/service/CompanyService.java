@@ -6,6 +6,7 @@ import com.dob.domain.exception.DomainException;
 import com.dob.domain.model.Company;
 import com.dob.domain.repository.CompanyRepository;
 import com.dob.domain.repository.MembershipRepository;
+import com.dob.domain.repository.UnlockedCompanyRepository;
 import com.dob.domain.repository.UserRepository;
 import com.dob.infrastructure.security.UserPrincipal;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -32,6 +33,7 @@ public class CompanyService {
 
     private final CompanyRepository companyRepository;
     private final MembershipRepository membershipRepository;
+    private final UnlockedCompanyRepository unlockedCompanyRepository;
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
 
@@ -51,10 +53,19 @@ public class CompanyService {
         long total = companyRepository.countSearch(query, sector, state, companyType,
             revenueRange, membershipFilter);
 
-        boolean isPremium = principal != null && isPremiumUser(principal);
+        // Only ADMIN/SUPER_ADMIN can bypass per-company lock checks
+        boolean isAdminUser = principal != null && ADMIN_ROLES.contains(principal.role());
+
+        // Fetch unlocked company IDs for per-company access checks
+        Set<UUID> unlockedCompanyIds = principal != null
+            ? new HashSet<>(unlockedCompanyRepository.findCompanyIdsByMemberId(principal.id()))
+            : Collections.emptySet();
 
         var content = companies.stream()
-            .map(c -> isPremium ? (Object) toPremiumResponse(c) : (Object) toFreeResponse(c))
+            .map(c -> {
+                boolean canAccess = isAdminUser || unlockedCompanyIds.contains(c.getId());
+                return canAccess ? (Object) toPremiumResponse(c) : (Object) toFreeResponse(c);
+            })
             .toList();
 
         int totalPages = (int) Math.ceil((double) total / size);
@@ -84,11 +95,13 @@ public class CompanyService {
             throw new DomainException("Company profile is not publicly available");
         }
 
-        boolean isPremium = principal != null && isPremiumUser(principal);
+        boolean isUnlocked = principal != null &&
+            unlockedCompanyRepository.existsByMemberIdAndCompanyId(principal.id(), id);
+
         if (isOwner || isAdmin) {
             return toCompanyDetailDto(company);
         }
-        return isPremium ? toPremiumDetailResponse(company) : toFreeResponse(company);
+        return isUnlocked ? toPremiumDetailResponse(company) : toFreeResponse(company);
     }
 
     /**
@@ -105,11 +118,13 @@ public class CompanyService {
             throw new DomainException("Company profile is not publicly available");
         }
 
-        boolean isPremium = principal != null && isPremiumUser(principal);
+        boolean isUnlocked = principal != null &&
+            unlockedCompanyRepository.existsByMemberIdAndCompanyId(principal.id(), company.getId());
+
         if (isOwner || isAdmin) {
             return toCompanyDetailDto(company);
         }
-        return isPremium ? toPremiumDetailResponse(company) : toFreeResponse(company);
+        return isUnlocked ? toPremiumDetailResponse(company) : toFreeResponse(company);
     }
 
     // ──────── Company CRUD ────────

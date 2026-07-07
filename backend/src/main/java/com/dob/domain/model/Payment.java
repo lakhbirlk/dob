@@ -14,6 +14,7 @@ public class Payment {
     private UUID userId;
     private UUID membershipId;
     private UUID companyId;
+    private String planId;
     private BigDecimal amount;
     private BigDecimal gst;
     private BigDecimal total;

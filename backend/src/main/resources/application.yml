@@ -73,9 +73,37 @@ storage:
 
 # Platform pricing (from spec.md)
 pricing:
-  membership: 2500.00
   company-listing: 500.00
   gst-rate: 0.18
+  guest-plan:
+    id: GUEST
+    name: Guest
+    credits: 2
+    amount: 0.00
+
+  # Credits required to unlock one company
+  credit-cost: 1
+  credit-plans:
+    - id: CREDITS_3
+      name: Starter
+      credits: 3
+      amount: 1500.00
+    - id: CREDITS_5
+      name: Basic
+      credits: 5
+      amount: 2000.00
+    - id: CREDITS_10
+      name: Pro
+      credits: 10
+      amount: 3000.00
+    - id: CREDITS_20
+      name: Business
+      credits: 20
+      amount: 4000.00
+    - id: CREDITS_30
+      name: Enterprise
+      credits: 30
+      amount: 5000.00
 
 # Download limits (from terms.html)
 downloads:

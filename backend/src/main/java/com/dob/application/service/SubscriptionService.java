@@ -27,28 +27,44 @@ public class SubscriptionService {
     private final MembershipRepository membershipRepository;
     private final PricingProperties pricing;
 
-    private static final String PLAN_RESEARCH = "RESEARCH";
     private static final String PLAN_COMPANY = "COMPANY";
+
+    /**
+     * Returns true if the plan is one of the 5 research credit plans.
+     */
+    private boolean isCreditPlan(String plan) {
+        return pricing.getCreditPlans().stream().anyMatch(p -> p.getId().equals(plan));
+    }
 
     /**
      * Creates a pending subscription (payment record) for the given plan.
      */
     @Transactional
     public CreateSubscriptionResponse createSubscription(UUID userId, String plan) {
-        if (!PLAN_RESEARCH.equals(plan) && !PLAN_COMPANY.equals(plan)) {
-            throw new DomainException("Invalid plan: " + plan + ". Must be RESEARCH or COMPANY.");
+        boolean isCompany = PLAN_COMPANY.equals(plan);
+        boolean isCredit = isCreditPlan(plan);
+
+        if (!isCompany && !isCredit) {
+            throw new DomainException("Invalid plan: '" + plan
+                + "'. Available credit plans: " + pricing.getCreditPlans().stream().map(PricingProperties.CreditPlan::getId).toList()
+                + ", or COMPANY.");
         }
 
-        BigDecimal amount = PLAN_RESEARCH.equals(plan)
-            ? pricing.getMembership()
-            : pricing.getCompanyListing();
+        BigDecimal amount;
+        if (isCompany) {
+            amount = pricing.getCompanyListing();
+        } else {
+            var creditPlan = pricing.getCreditPlan(plan);
+            amount = creditPlan.getAmount();
+        }
+
         BigDecimal gstRate = pricing.getGstRate();
         BigDecimal gst = amount.multiply(gstRate).setScale(2, RoundingMode.HALF_UP);
         BigDecimal total = amount.add(gst);
 
-        Payment.PaymentType paymentType = PLAN_RESEARCH.equals(plan)
-            ? Payment.PaymentType.MEMBERSHIP
-            : Payment.PaymentType.LISTING;
+        Payment.PaymentType paymentType = isCompany
+            ? Payment.PaymentType.LISTING
+            : Payment.PaymentType.MEMBERSHIP;
 
         String transactionId = generateTransactionId();
 
@@ -61,6 +77,7 @@ public class SubscriptionService {
             .razorpayOrderId(transactionId)
             .status(Payment.PaymentStatus.CREATED)
             .paymentType(paymentType)
+            .planId(plan)   // store which plan was chosen
             .build();
 
         Payment saved = paymentRepository.save(payment);
@@ -96,10 +113,24 @@ public class SubscriptionService {
         payment.markPaid(paymentId, "simplified-flow");
         paymentRepository.save(payment);
 
-        // Determine plan details
-        boolean isResearch = payment.getPaymentType() == Payment.PaymentType.MEMBERSHIP;
-        String planType = isResearch ? PLAN_RESEARCH : PLAN_COMPANY;
-        int durationDays = isResearch ? 30 : 365;
+        // Determine plan details and membership params
+        String planId = payment.getPlanId() != null ? payment.getPlanId() : "CREDITS_10";
+        int creditLimit;
+        boolean isCompany;
+
+        if (PLAN_COMPANY.equals(planId)) {
+            creditLimit = 0;
+            isCompany = true;
+        } else if (isCreditPlan(planId)) {
+            creditLimit = pricing.getCreditPlan(planId).getCredits();
+            isCompany = false;
+        } else {
+            // Fallback for legacy data
+            creditLimit = 10;
+            isCompany = false;
+        }
+
+        int durationDays = isCompany ? 365 : 30;
 
         // Cancel any existing active membership for this user
         Optional<Membership> existingActive = membershipRepository.findActiveByUserId(payment.getUserId());
@@ -109,29 +140,29 @@ public class SubscriptionService {
             log.info("Cancelled existing membership {} for user {}", m.getId(), payment.getUserId());
         });
 
-        // Create new membership
+        // Create new membership with credit limit
         LocalDate startDate = LocalDate.now();
         LocalDate endDate = startDate.plusDays(durationDays);
 
         Membership membership = Membership.builder()
             .id(UUID.randomUUID())
             .userId(payment.getUserId())
-            .planType(planType)
+            .planType(planId)
             .status(Membership.MembershipStatus.ACTIVE)
             .startDate(startDate)
             .endDate(endDate)
-            .downloadLimit(isResearch ? 50 : 0) // RESEARCH gets 50 downloads, COMPANY gets 0
+            .downloadLimit(creditLimit)
             .downloadsUsed(0)
             .build();
 
         Membership saved = membershipRepository.save(membership);
 
-        log.info("Payment completed for subscription {} — membership {} activated ({} to {})",
-            subscriptionId, saved.getId(), startDate, endDate);
+        log.info("Payment completed for subscription {} — membership {} activated ({} to {}, {} credits)",
+            subscriptionId, saved.getId(), startDate, endDate, creditLimit);
 
         return new PaymentSuccessResponse(
             saved.getId(),
-            planType,
+            planId,
             "ACTIVE",
             startDate,
             endDate,

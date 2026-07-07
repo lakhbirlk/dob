@@ -6,85 +6,157 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams, Redirect } from "expo-router";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
+import { Badge } from "@/components/Badge";
 import { useAuthStore } from "@/store/authStore";
-import { subscriptionsApi, paymentsApi } from "@/services/api";
-import { UserRole } from "@/types";
+import { subscriptionsApi, paymentsApi, membershipsApi } from "@/services/api";
+import type { CreditPlan } from "@/types";
 
-// ─────────────────────── Plan Config ───────────────────────
+// ─────────────────────── Plan Metadata ───────────────────────
 
-const PLAN_CONFIG = {
-  RESEARCH: {
-    title: "Research Membership",
-    icon: "🔬",
-    amount: 2500,
-    gst: 450,
-    total: 2950,
-    color: "bg-gold",
-    badge: "bg-gold",
-    badgeText: "text-navy",
-    benefits: [
-      "Full Company Reports",
-      "Company Names & Identifiers",
-      "Financial Statements",
-      "Director Information",
-      "Download Reports (50/month)",
-      "Premium Search & Filters",
-      "AI-Powered Insights",
-      "Saved Companies & Watchlists",
-      "Unlimited Company Viewing",
-      "Priority Email Support",
-    ],
-    dashboardRoute: "/(member)/dashboard" as const,
-  },
-  COMPANY: {
-    title: "Company Listing",
-    icon: "🏢",
-    amount: 500,
-    gst: 90,
-    total: 590,
-    color: "bg-navy",
-    badge: "bg-teal",
-    badgeText: "text-white",
-    benefits: [
-      "Company Profile Published",
-      "Company Dashboard Access",
-      "Financial Statement Upload",
-      "CA Certificate Verification",
-      "Business Analytics",
-      "Profile Editing",
-      "Company Visibility to Researchers",
-      "Video Introduction",
-    ],
-    dashboardRoute: "/(company)/dashboard" as const,
-  },
-} as const;
+const PLAN_META: Record<string, { icon: string; color: string; badge: string; badgeText: string }> = {
+  CREDITS_3:  { icon: "🌱", color: "bg-green", badge: "bg-white/20", badgeText: "text-white" },
+  CREDITS_5:  { icon: "🚀", color: "bg-blue", badge: "bg-white/20", badgeText: "text-white" },
+  CREDITS_10: { icon: "💎", color: "bg-gold", badge: "bg-navy", badgeText: "text-gold" },
+  CREDITS_20: { icon: "🏆", color: "bg-navy-2", badge: "bg-white/20", badgeText: "text-white" },
+  CREDITS_30: { icon: "👑", color: "bg-navy-deep", badge: "bg-gold", badgeText: "text-navy" },
+  COMPANY:    { icon: "🏢", color: "bg-navy", badge: "bg-teal", badgeText: "text-white" },
+};
 
-type PlanKey = keyof typeof PLAN_CONFIG;
+const CREDIT_BENEFITS = [
+  "Full Company Reports with Identifiers",
+  "Company Names, CIN, GST, PAN Details",
+  "CA-Certified Financial Statements",
+  "Director & Shareholding Information",
+  "Download Reports (PDF)",
+  "AI-Powered Risk Analysis",
+  "Premium Search & Filters",
+  "Saved Companies & Watchlists",
+  "Priority Email Support",
+];
+
+const COMPANY_BENEFITS = [
+  "Company Profile Published",
+  "Company Dashboard Access",
+  "Financial Statement Upload",
+  "CA Certificate Verification",
+  "Business Analytics",
+  "Profile Editing",
+  "Company Visibility to Researchers",
+  "Video Introduction",
+];
+
+// ─────────────────────── Plan details helper ───────────────────────
+
+interface PlanDetail {
+  title: string;
+  icon: string;
+  color: string;
+  badge: string;
+  badgeText: string;
+  amount: number;
+  gst: number;
+  total: number;
+  benefits: string[];
+  dashboardRoute: string;
+  periodLabel: string;
+  credits?: number;
+}
+
+function buildPlanDetail(planId: string, plans: CreditPlan[]): PlanDetail | null {
+  if (planId === "COMPANY") {
+    return {
+      title: "Company Listing",
+      icon: "🏢",
+      color: "bg-navy",
+      badge: "bg-teal",
+      badgeText: "text-white",
+      amount: 500,
+      gst: 90,
+      total: 590,
+      benefits: COMPANY_BENEFITS,
+      dashboardRoute: "/(company)/dashboard",
+      periodLabel: "/year",
+    };
+  }
+
+  const plan = plans.find((p) => p.id === planId);
+  if (!plan) return null;
+
+  return {
+    title: `${plan.name} — ${plan.credits} Credits`,
+    icon: PLAN_META[planId]?.icon ?? "📊",
+    color: PLAN_META[planId]?.color ?? "bg-navy",
+    badge: PLAN_META[planId]?.badge ?? "bg-white/20",
+    badgeText: PLAN_META[planId]?.badgeText ?? "text-white",
+    amount: plan.amount,
+    gst: plan.gst,
+    total: plan.total,
+    benefits: CREDIT_BENEFITS,
+    dashboardRoute: "/(member)/dashboard",
+    periodLabel: "/month",
+    credits: plan.credits,
+  };
+}
+
 type PaymentState = "idle" | "processing" | "success";
 
 // ─────────────────────── Component ───────────────────────
 
 export default function PaymentScreen() {
-  const { isAuthenticated, isHydrated, user } = useAuthStore();
+  const { isAuthenticated, isHydrated } = useAuthStore();
   const params = useLocalSearchParams<{ plan?: string }>();
-  const planKey = (params.plan?.toUpperCase() === "COMPANY" ? "COMPANY" : "RESEARCH") as PlanKey;
-  const plan = PLAN_CONFIG[planKey];
+  const planKey = params.plan?.toUpperCase() ?? "CREDITS_10";
 
+  const [plans, setPlans] = useState<CreditPlan[]>([]);
+  const [plansLoaded, setPlansLoaded] = useState(false);
   const [paymentState, setPaymentState] = useState<PaymentState>("idle");
   const [error, setError] = useState<string | null>(null);
   const [transactionId, setTransactionId] = useState<string | null>(null);
+
+  // Load plans for pricing details
+  useEffect(() => {
+    membershipsApi.getPlans().then((data) => {
+      setPlans(data.creditPlans ?? []);
+    }).catch(() => {
+      setPlans([
+        { id: "CREDITS_3",  name: "Starter",    credits: 3,  amount: 1500, gst: 270, total: 1770, duration: "MONTHLY" },
+        { id: "CREDITS_5",  name: "Basic",      credits: 5,  amount: 2000, gst: 360, total: 2360, duration: "MONTHLY" },
+        { id: "CREDITS_10", name: "Pro",        credits: 10, amount: 3000, gst: 540, total: 3540, duration: "MONTHLY" },
+        { id: "CREDITS_20", name: "Business",   credits: 20, amount: 4000, gst: 720, total: 4720, duration: "MONTHLY" },
+        { id: "CREDITS_30", name: "Enterprise", credits: 30, amount: 5000, gst: 900, total: 5900, duration: "MONTHLY" },
+      ]);
+    }).finally(() => setPlansLoaded(true));
+  }, []);
+
+  const plan = buildPlanDetail(planKey, plans);
 
   // Guard: not authenticated → redirect to login
   if (isHydrated && !isAuthenticated) {
     return <Redirect href={`/(auth)/login?redirect=/payment&plan=${planKey}`} />;
   }
 
-  // Guard: still hydrating
-  if (!isHydrated) {
+  // Guard: still hydrating or loading plans
+  if (!isHydrated || !plansLoaded) {
     return (
       <View className="flex-1 items-center justify-center bg-bg">
         <ActivityIndicator size="large" color="#1E2761" />
       </View>
+    );
+  }
+
+  // Guard: invalid plan (or GUEST which is not purchasable)
+  if (!plan) {
+    if (planKey === "GUEST") {
+      return <Redirect href="/(public)/pricing" />;
+    }
+    return (
+      <SafeAreaView className="flex-1 bg-bg" edges={["bottom"]}>
+        <View className="flex-1 items-center justify-center px-6">
+          <Text className="text-2xl font-extrabold text-ink mb-2">Invalid Plan</Text>
+          <Text className="text-muted text-center mb-6">The selected plan "{planKey}" was not found.</Text>
+          <Button variant="primary" onPress={() => router.back()}>Go Back</Button>
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -106,19 +178,28 @@ export default function PaymentScreen() {
 
       // Step 4: Auto-redirect after 2 seconds
       setTimeout(() => {
-        router.replace(plan.dashboardRoute);
+        router.replace(plan.dashboardRoute as any);
       }, 2000);
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "Payment failed. Please try again.";
+      let message = "Payment failed. Please try again.";
+      if (err instanceof Error) {
+        // Extract backend error detail from axios response if available
+        const axiosErr = (err as Record<string, unknown>).response as Record<string, unknown> | undefined;
+        if (axiosErr?.data) {
+          const data = axiosErr.data as Record<string, unknown>;
+          if (typeof data.detail === "string") message = data.detail;
+          else if (typeof data.message === "string") message = data.message;
+        } else {
+          message = err.message;
+        }
+      }
       setError(message);
       setPaymentState("idle");
     }
   }, [planKey, plan.dashboardRoute]);
 
-  // ──────────────────── Render States ────────────────────
+  // ──────────────────── SUCCESS STATE ────────────────────
 
-  // SUCCESS STATE
   if (paymentState === "success") {
     return (
       <SafeAreaView className="flex-1 bg-bg" edges={["bottom"]}>
@@ -141,6 +222,12 @@ export default function PaymentScreen() {
                   {plan.icon} {plan.title}
                 </Text>
               </View>
+              {plan.credits && (
+                <View className="flex-row justify-between">
+                  <Text className="text-muted text-sm">Credits</Text>
+                  <Text className="text-navy font-extrabold text-sm">{plan.credits} / month</Text>
+                </View>
+              )}
               <View className="flex-row justify-between">
                 <Text className="text-muted text-sm">Amount Paid</Text>
                 <Text className="text-green font-bold text-sm">
@@ -177,7 +264,8 @@ export default function PaymentScreen() {
     <SafeAreaView className="flex-1 bg-bg" edges={["bottom"]}>
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <View className={`${plan.color} pt-8 pb-10 px-6 items-center`}
+        <View
+          className={`${plan.color} pt-8 pb-10 px-6 items-center`}
           style={{ borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
         >
           <Text className="text-5xl mb-3">{plan.icon}</Text>
@@ -186,7 +274,7 @@ export default function PaymentScreen() {
           </Text>
           <View className={`${plan.badge} px-4 py-1 rounded-full`}>
             <Text className={`${plan.badgeText} text-sm font-bold`}>
-              {planKey === "RESEARCH" ? "Monthly Subscription" : "Annual Listing"}
+              {plan.credits ? `${plan.credits} Credits / month` : "Annual Listing"}
             </Text>
           </View>
         </View>
@@ -200,13 +288,21 @@ export default function PaymentScreen() {
                 <Text className="text-5xl font-extrabold text-ink">
                   ₹{plan.total.toLocaleString("en-IN")}
                 </Text>
-                <Text className="text-muted text-base ml-1">
-                  /{planKey === "RESEARCH" ? "month" : "year"}
-                </Text>
+                <Text className="text-muted text-base ml-1">{plan.periodLabel}</Text>
               </View>
               <Text className="text-faint text-xs mt-1">
                 ₹{plan.amount.toLocaleString("en-IN")} + ₹{plan.gst} GST
               </Text>
+              {plan.credits && (
+                <View className="flex-row items-center gap-x-2 mt-2">
+                  <Badge variant="success">
+                    <Text className="text-xs font-extrabold">{plan.credits} Company Credits</Text>
+                  </Badge>
+                  <Badge variant="info">
+                    <Text className="text-xs font-extrabold">Full Access</Text>
+                  </Badge>
+                </View>
+              )}
             </View>
           </Card>
 
@@ -239,7 +335,7 @@ export default function PaymentScreen() {
 
           {/* Pay Now Button */}
           <Button
-            variant={planKey === "RESEARCH" ? "gold" : "primary"}
+            variant={planKey.startsWith("CREDITS") ? "gold" : "primary"}
             size="xl"
             loading={paymentState === "processing"}
             onPress={handlePayNow}

@@ -14,6 +14,7 @@ import type {
   CompanyRegistrationRequest,
   CompanyResponse,
   CreateSubscriptionResponse,
+  CreditPlan,
   FinancialStatement,
   FreeCompanyResponse,
   LoginRequest,
@@ -23,6 +24,7 @@ import type {
   PaginatedResponse,
   Payment,
   PaymentSuccessResponse,
+  PlansResponse,
   PremiumCompanyResponse,
   RegisterRequest,
   ResearchMemberRegistrationRequest,
@@ -35,6 +37,13 @@ import type {
   Refund,
   AuditLog,
   DownloadDocument,
+  UnlockCompanyResponse,
+  UnlockStatusResponse,
+  UnlockedCompanyItem,
+  CreditTransactionItem,
+  CreditSummary,
+  ActivityEntry,
+  ActivityCategory,
 } from "@/types";
 import { UserRole, CompanyStatus } from "@/types";
 
@@ -686,7 +695,7 @@ export const membershipsApi = {
     return data;
   },
 
-  getPlans: async (): Promise<ApiResponse<MembershipPlan[]>> => {
+  getPlans: async (): Promise<PlansResponse> => {
     const { data } = await api.get("/memberships/plans");
     return data;
   },
@@ -1042,6 +1051,118 @@ export const notificationsApi = {
   markRead: async (id: string): Promise<ApiResponse<Notification>> => {
     const { data } = await api.put(`/notifications/${id}/read`);
     return data;
+  },
+};
+
+// ─────────────────────── Company Unlock API ───────────────────────
+
+export const unlockApi = {
+  /**
+   * Unlock a company using research credits.
+   */
+  unlockCompany: async (companyId: string): Promise<UnlockCompanyResponse> => {
+    const { data } = await api.post(`/unlock/${companyId}`);
+    return data;
+  },
+
+  /**
+   * Check if a company is unlocked by the current user.
+   */
+  checkStatus: async (companyId: string): Promise<UnlockStatusResponse> => {
+    const { data } = await api.get(`/unlock/${companyId}/status`);
+    return data;
+  },
+
+  /**
+   * Batch check unlock status for multiple companies.
+   */
+  batchCheckStatus: async (companyIds: string[]): Promise<UnlockStatusResponse[]> => {
+    const { data } = await api.post("/unlock/batch-status", { companyIds });
+    return data;
+  },
+
+  /**
+   * Get all unlocked companies for the current user.
+   */
+  getUnlockedCompanies: async (page = 0, size = 20): Promise<PaginatedResponse<UnlockedCompanyItem>> => {
+    const { data } = await api.get("/unlock/companies", { params: { page, size } });
+    return {
+      success: true,
+      data: data.content ?? [],
+      message: "OK",
+      pagination: {
+        page: data.page,
+        limit: data.size,
+        total: data.totalElements,
+        totalPages: data.totalPages,
+      },
+    };
+  },
+
+  /**
+   * Get credit transaction history.
+   */
+  getCreditHistory: async (page = 0, size = 20): Promise<PaginatedResponse<CreditTransactionItem>> => {
+    const { data } = await api.get("/unlock/credits", { params: { page, size } });
+    return {
+      success: true,
+      data: data.content ?? [],
+      message: "OK",
+      pagination: {
+        page: data.page,
+        limit: data.size,
+        total: data.totalElements,
+        totalPages: data.totalPages,
+      },
+    };
+  },
+
+  /**
+   * Get credit summary for dashboard.
+   */
+  getCreditSummary: async (): Promise<CreditSummary> => {
+    const { data } = await api.get("/unlock/summary");
+    return data;
+  },
+
+  /**
+   * Get activity log for the current member with optional filters.
+   */
+  getActivityLog: async (
+    params: {
+      category?: ActivityCategory;
+      dateFrom?: string;
+      dateTo?: string;
+      search?: string;
+      page?: number;
+      size?: number;
+    } = {}
+  ): Promise<PaginatedResponse<ActivityEntry>> => {
+    const { category = "ALL", dateFrom, dateTo, search, page = 0, size = 20 } = params;
+    const queryParams: Record<string, string | number> = { category, page, size };
+    if (dateFrom) queryParams.dateFrom = dateFrom;
+    if (dateTo) queryParams.dateTo = dateTo;
+    if (search) queryParams.search = search;
+    const { data } = await api.get("/unlock/activity", { params: queryParams });
+    return {
+      success: true,
+      data: data.content ?? [],
+      message: "OK",
+      pagination: {
+        page: data.page,
+        limit: data.size,
+        total: data.totalElements,
+        totalPages: data.totalPages,
+      },
+    };
+  },
+
+  /**
+   * Get recent activities for the dashboard widget (last 5).
+   */
+  getRecentActivities: async (): Promise<ActivityEntry[]> => {
+    const result = await unlockApi.getActivityLog({ page: 0, size: 5 });
+    return result.data;
   },
 };
 

@@ -3,8 +3,11 @@ package com.dob.application.service;
 import com.dob.application.dto.*;
 import com.dob.domain.exception.DomainException;
 import com.dob.domain.exception.UnauthorizedException;
+import com.dob.domain.model.Membership;
 import com.dob.domain.model.User;
+import com.dob.domain.repository.MembershipRepository;
 import com.dob.domain.repository.UserRepository;
+import com.dob.infrastructure.config.PricingProperties;
 import com.dob.infrastructure.security.JwtProvider;
 import com.dob.infrastructure.security.UserPrincipal;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,6 +30,8 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
+    private final MembershipRepository membershipRepository;
+    private final PricingProperties pricing;
     private final RedisTemplate<String, String> redisTemplate;
 
     // In-memory fallback for local dev when Redis is unavailable
@@ -34,10 +40,14 @@ public class AuthService {
     public AuthService(UserRepository userRepository,
                        PasswordEncoder passwordEncoder,
                        JwtProvider jwtProvider,
+                       MembershipRepository membershipRepository,
+                       PricingProperties pricing,
                        @Autowired(required = false) RedisTemplate<String, String> redisTemplate) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtProvider = jwtProvider;
+        this.membershipRepository = membershipRepository;
+        this.pricing = pricing;
         this.redisTemplate = redisTemplate;
     }
 
@@ -58,6 +68,24 @@ public class AuthService {
             .build();
 
         user = userRepository.save(user);
+
+        // Auto-create Guest membership for new research members
+        if (user.getRole() == User.UserRole.RESEARCH_MEMBER) {
+            PricingProperties.CreditPlan guest = pricing.getGuestPlan();
+            LocalDate now = LocalDate.now();
+            Membership guestMembership = Membership.builder()
+                .id(UUID.randomUUID())
+                .userId(user.getId())
+                .planType(guest.getId())
+                .status(Membership.MembershipStatus.ACTIVE)
+                .startDate(now)
+                .endDate(now.plusYears(10))
+                .downloadLimit(guest.getCredits())
+                .downloadsUsed(0)
+                .build();
+            membershipRepository.save(guestMembership);
+            log.info("Assigned GUEST membership ({} credits) to user: {}", guest.getCredits(), user.getEmail());
+        }
 
         String accessToken = jwtProvider.generateAccessToken(user.getId(), user.getEmail(), user.getRole().name());
         String refreshToken = jwtProvider.generateRefreshToken(user.getId());

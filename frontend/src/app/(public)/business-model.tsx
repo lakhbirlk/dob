@@ -12,9 +12,9 @@ const REVENUE_STREAMS = [
   {
     icon: "👤",
     title: "Research Membership",
-    subtitle: "Subscription — ₹2,500/month + GST",
-    desc: "Primary revenue stream. Research members pay a monthly subscription for access to CA-certified financial data, company profiles, and document downloads.",
-    highlights: ["Recurring monthly revenue", "50 research profile downloads/month", "Full access to financial statements, videos & contacts"],
+    subtitle: "Subscription — from ₹1,500/month + GST",
+    desc: "Primary revenue stream. Research members choose from 5 credit-based plans (3–30 credits/month) for access to CA-certified financial data, company profiles, and document downloads.",
+    highlights: ["Recurring monthly revenue", "Flexible credit-based plans (3–30 credits)", "Full access to financial statements, videos & contacts"],
   },
   {
     icon: "🏢",
@@ -26,10 +26,10 @@ const REVENUE_STREAMS = [
 ];
 
 const HOW_IT_WORKS_MEMBERS = [
-  { step: "1", title: "Create Account", desc: "Register with email + password. No OTP needed. Free to browse." },
+  { step: "1", title: "Create Account", desc: "Register with email + password. Get 2 free credits instantly to explore the platform." },
   { step: "2", title: "Accept Research Declaration", desc: "Confirm you're using the platform for research & due-diligence purposes only." },
-  { step: "3", title: "Subscribe", desc: "Pay ₹2,500/month + GST via Razorpay. Instant access on payment." },
-  { step: "4", title: "Explore & Download", desc: "Search 10,000+ companies, view full profiles, download up to 50 research reports/month." },
+  { step: "3", title: "Subscribe or Top-Up", desc: "Choose a credit plan from ₹1,500–₹5,000/month + GST. Use free credits first, upgrade anytime." },
+  { step: "4", title: "Explore & Unlock", desc: "Search 10,000+ companies, unlock profiles using your credits, and download research reports." },
 ];
 
 const HOW_IT_WORKS_COMPANIES = [
@@ -114,9 +114,9 @@ const SITEMAP = [
 
 const STATS = [
   { value: "10,000+", label: "Listed Companies" },
-  { value: "₹2,500/mo", label: "Research Access" },
+  { value: "2 Free", label: "Credits on Sign-up" },
+  { value: "₹1,500/mo", label: "Research Starting At" },
   { value: "₹500/yr", label: "Company Listing" },
-  { value: "50/mo", label: "Downloads Included" },
 ];
 
 // ─────────────────────── Component ───────────────────────
@@ -332,7 +332,7 @@ export default function BusinessModelScreen() {
                 <Text className="text-white font-bold text-sm">Research Membership</Text>
                 <Text className="text-faint text-xs">Monthly subscription</Text>
               </View>
-              <Text className="text-gold font-extrabold text-lg">₹2,500 + GST</Text>
+              <Text className="text-gold font-extrabold text-lg">from ₹1,500 + GST</Text>
             </View>
             <View className="flex-row justify-between items-center bg-white/10 rounded-xl px-4 py-3">
               <View>

@@ -59,7 +59,15 @@ public class PaymentService {
         BigDecimal amount, gst;
 
         if ("MEMBERSHIP".equals(request.paymentType())) {
-            amount = pricing.getMembership();
+            // If a planId was provided, get its specific amount
+            String planId = request.planId();
+            if (planId != null && !planId.isEmpty()) {
+                var plan = pricing.getCreditPlan(planId);
+                amount = plan.getAmount();
+            } else {
+                // Fallback to first credit plan
+                amount = pricing.getCreditPlans().get(0).getAmount();
+            }
         } else if ("LISTING".equals(request.paymentType())) {
             amount = pricing.getCompanyListing();
         } else {
@@ -88,6 +96,7 @@ public class PaymentService {
                 .razorpayOrderId(order.get("id"))
                 .status(Payment.PaymentStatus.CREATED)
                 .paymentType(Payment.PaymentType.valueOf(request.paymentType()))
+                .planId(request.planId())
                 .build();
 
             payment = paymentRepository.save(payment);
@@ -170,14 +179,16 @@ public class PaymentService {
         var existing = membershipRepository.findActiveByUserId(userId);
         existing.ifPresent(m -> { m.cancel(); membershipRepository.save(m); });
 
-        // Monthly membership with 50 downloads from terms.html
+        // Default to 10-credit plan if no specific plan context
+        int creditLimit = pricing.getCreditPlan("CREDITS_10").getCredits();
+
         var membership = Membership.builder()
             .userId(userId)
-            .planType("MONTHLY")
+            .planType("CREDITS_10")
             .status(Membership.MembershipStatus.ACTIVE)
             .startDate(LocalDate.now())
             .endDate(LocalDate.now().plusMonths(1))
-            .downloadLimit(50)
+            .downloadLimit(creditLimit)
             .downloadsUsed(0)
             .build();
 
@@ -205,6 +216,7 @@ public class PaymentService {
             .userId(p.getUserId())
             .membershipId(p.getMembershipId())
             .companyId(p.getCompanyId())
+            .planId(p.getPlanId())
             .amount(p.getAmount())
             .gst(p.getGst())
             .total(p.getTotal())

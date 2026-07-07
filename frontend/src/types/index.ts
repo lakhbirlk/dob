@@ -219,6 +219,27 @@ export interface Company {
 
 // ─────────────────────── Membership ───────────────────────
 
+export interface CreditPlan {
+  id: string;
+  name: string;
+  credits: number;
+  amount: number;
+  gst: number;
+  total: number;
+  duration: string;
+}
+
+export interface PlansResponse {
+  creditPlans: CreditPlan[];
+  guestPlan: CreditPlan & { duration: string };
+  companyListing: {
+    amount: number;
+    gst: number;
+    total: number;
+    duration: string;
+  };
+}
+
 export interface MembershipPlan {
   id: string;
   name: string;
@@ -259,7 +280,12 @@ export interface Payment {
 // ─────────────────────── Subscription (Simplified Flow) ───────────────────────
 
 export enum PlanType {
-  RESEARCH = "RESEARCH",
+  GUEST = "GUEST",
+  CREDITS_3 = "CREDITS_3",
+  CREDITS_5 = "CREDITS_5",
+  CREDITS_10 = "CREDITS_10",
+  CREDITS_20 = "CREDITS_20",
+  CREDITS_30 = "CREDITS_30",
   COMPANY = "COMPANY",
 }
 
@@ -665,3 +691,76 @@ export interface DownloadDocument {
   companyName?: string;
   downloadedAt: string;
 }
+
+// ─────────────────────── Company Unlock Types ───────────────────────
+
+export interface UnlockCompanyResponse {
+  transactionId: string;
+  companyId: string;
+  creditsUsed: number;
+  remainingCredits: number;
+  status: "SUCCESS" | "INSUFFICIENT_CREDITS" | "ALREADY_UNLOCKED";
+  message: string;
+}
+
+export interface UnlockStatusResponse {
+  companyId: string;
+  unlocked: boolean;
+  unlockedAt?: string;
+  creditsUsed?: number;
+}
+
+export interface UnlockedCompanyItem {
+  companyId: string;
+  publicCompanyId: string;
+  companyName: string;
+  sector: string | null;
+  city: string | null;
+  state: string | null;
+  creditsUsed: number;
+  unlockedAt: string;
+}
+
+export interface CreditTransactionItem {
+  id: string;
+  companyId: string | null;
+  companyName: string | null;
+  creditsUsed: number;
+  transactionType: string;
+  balanceBefore: number;
+  balanceAfter: number;
+  status: string;
+  transactionId: string;
+  createdAt: string;
+}
+
+export interface CreditSummary {
+  totalCredits: number;
+  creditsUsed: number;
+  availableCredits: number;
+  totalUnlocked: number;
+  planType: string;
+  planName: string;
+}
+
+// ─────────────────────── Activity Tracker Types ───────────────────────
+
+export interface ActivityEntry {
+  id: string;
+  activityType: string;
+  category: "COMPANY" | "CREDITS" | "AUTH" | "SUBSCRIPTION" | "SEARCH" | "DOWNLOADS" | "OTHER";
+  description: string;
+  companyId: string | null;
+  companyName: string | null;
+  creditsUsed: number | null;
+  status: string;
+  ipAddress: string | null;
+  device: string | null;
+  transactionId: string | null;
+  timestamp: string;
+}
+
+export type ActivityCategory =
+  | "ALL" | "COMPANY" | "CREDITS" | "AUTH" | "SUBSCRIPTION" | "SEARCH" | "DOWNLOADS";
+
+export type ActivityDateFilter = "TODAY" | "7D" | "30D" | "90D" | "ALL";

@@ -25,6 +25,9 @@ public class AuditLogEntity {
     @Column(name = "company_id")
     private UUID companyId;
 
+    @Column(name = "transaction_id", length = 100)
+    private String transactionId;
+
     @Column(nullable = false, length = 20)
     private String outcome;
 
@@ -33,6 +36,9 @@ public class AuditLogEntity {
 
     @Column(name = "ip_address", length = 45)
     private String ipAddress;
+
+    @Column(name = "user_agent", length = 500)
+    private String userAgent;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

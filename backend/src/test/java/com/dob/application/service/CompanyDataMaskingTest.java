@@ -4,6 +4,7 @@ import com.dob.application.dto.FreeCompanyResponse;
 import com.dob.domain.model.Company;
 import com.dob.domain.repository.CompanyRepository;
 import com.dob.domain.repository.MembershipRepository;
+import com.dob.domain.repository.UnlockedCompanyRepository;
 import com.dob.domain.repository.UserRepository;
 import com.dob.infrastructure.security.UserPrincipal;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -47,6 +48,7 @@ class CompanyDataMaskingTest {
 
     @Mock private CompanyRepository companyRepository;
     @Mock private MembershipRepository membershipRepository;
+    @Mock private UnlockedCompanyRepository unlockedCompanyRepository;
     @Mock private UserRepository userRepository;
 
     private Company approvedCompany;
@@ -59,7 +61,7 @@ class CompanyDataMaskingTest {
 
     @BeforeEach
     void setUp() {
-        companyService = new CompanyService(companyRepository, membershipRepository, userRepository, new ObjectMapper());
+        companyService = new CompanyService(companyRepository, membershipRepository, unlockedCompanyRepository, userRepository, new ObjectMapper());
 
         approvedCompany = Company.builder()
             .id(COMPANY_UUID)
@@ -190,12 +192,12 @@ class CompanyDataMaskingTest {
     }
 
     @Nested
-    @DisplayName("Premium User — Full Access")
+    @DisplayName("Research Member with Active Membership — Companies Locked by Default")
     class PremiumUserFullAccess {
 
         @Test
-        @DisplayName("Premium user search results MUST include company name and full details")
-        void premiumUserSearchShouldIncludeCompanyName() {
+        @DisplayName("Member with active membership still sees locked companies in search results unless unlocked")
+        void memberWithMembershipSeesLockedCompaniesByDefault() {
             lenient().when(companyRepository.search(any(), any(), any(), any(), any(), any(), anyInt(), anyInt()))
                 .thenReturn(List.of(approvedCompany));
             lenient().when(companyRepository.countSearch(any(), any(), any(), any(), any(), any()))
@@ -209,9 +211,33 @@ class CompanyDataMaskingTest {
                 .endDate(java.time.LocalDate.now().plusDays(30))
                 .build();
             lenient().when(membershipRepository.findActiveByUserId(userId)).thenReturn(Optional.of(activeMembership));
+            // No unlocked companies — user must unlock individually
+            lenient().when(unlockedCompanyRepository.findCompanyIdsByMemberId(userId)).thenReturn(List.of());
 
             var result = companyService.search(
                 new UserPrincipal(userId, "member@test.com", "RESEARCH_MEMBER"),
+                null, null, null, null, null, null, 0, 20
+            );
+
+            assertThat(result.content()).hasSize(1);
+            var item = result.content().get(0);
+            assertThat(item).isExactlyInstanceOf(com.dob.application.dto.FreeCompanyResponse.class);
+            var free = (FreeCompanyResponse) item;
+            assertThat(free.locked()).isTrue();
+        }
+
+        @Test
+        @DisplayName("Admin user sees full company data without unlocking")
+        void adminUserSeesFullData() {
+            lenient().when(companyRepository.search(any(), any(), any(), any(), any(), any(), anyInt(), anyInt()))
+                .thenReturn(List.of(approvedCompany));
+            lenient().when(companyRepository.countSearch(any(), any(), any(), any(), any(), any()))
+                .thenReturn(1L);
+
+            var adminId = UUID.randomUUID();
+
+            var result = companyService.search(
+                new UserPrincipal(adminId, "admin@test.com", "ADMIN"),
                 null, null, null, null, null, null, 0, 20
             );
 
@@ -224,18 +250,12 @@ class CompanyDataMaskingTest {
         }
 
         @Test
-        @DisplayName("Premium user detail response includes all company info")
-        void premiumUserDetailShouldIncludeFullData() {
+        @DisplayName("Research member with unlocked company sees full details")
+        void memberWithUnlockedCompanySeesFullData() {
             lenient().when(companyRepository.findById(any())).thenReturn(Optional.of(approvedCompany));
 
             var userId = UUID.randomUUID();
-            var activeMembership = com.dob.domain.model.Membership.builder()
-                .id(UUID.randomUUID())
-                .userId(userId)
-                .status(com.dob.domain.model.Membership.MembershipStatus.ACTIVE)
-                .endDate(java.time.LocalDate.now().plusDays(30))
-                .build();
-            lenient().when(membershipRepository.findActiveByUserId(userId)).thenReturn(Optional.of(activeMembership));
+            lenient().when(unlockedCompanyRepository.existsByMemberIdAndCompanyId(userId, COMPANY_UUID)).thenReturn(true);
 
             var result = companyService.getById(COMPANY_UUID,
                 new UserPrincipal(userId, "member@test.com", "RESEARCH_MEMBER"));

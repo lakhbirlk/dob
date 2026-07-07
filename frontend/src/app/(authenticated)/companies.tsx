@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { View, Text, FlatList, TouchableOpacity } from "react-native";
+import { View, Text, FlatList, TouchableOpacity, Alert } from "react-native";
 import { Card } from "@/components/Card";
 import { SearchBar } from "@/components/SearchBar";
 import { EmptyState } from "@/components/EmptyState";
@@ -11,6 +11,7 @@ import { colors } from "@/theme/colors";
 import { useCompanySearch } from "@/hooks/useCompanies";
 import { useSearchStore } from "@/store/searchStore";
 import { useAuthStore } from "@/store/authStore";
+import { unlockApi } from "@/services/api";
 import { router } from "expo-router";
 import type { CompanyResponse, FreeCompanyResponse, PremiumCompanyResponse } from "@/types";
 import { UserRole } from "@/types";
@@ -25,23 +26,42 @@ export default function CompaniesScreen() {
   const [showFilters, setShowFilters] = useState(false);
   const [upgradeTarget, setUpgradeTarget] = useState<string | undefined>(undefined);
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const [unlockingId, setUnlockingId] = useState<string | null>(null);
 
   const { data, isLoading, error, refetch } = useCompanySearch();
   const { isAuthenticated, user } = useAuthStore();
   const isAdmin = user?.role === UserRole.ADMIN || user?.role === UserRole.SUPER_ADMIN;
 
-  const handleUnlock = useCallback((companyId: string) => {
+  const handleUnlock = useCallback(async (companyId: string) => {
     if (isAdmin) return; // Admins never see upgrade prompts
-    if (isAuthenticated) {
-      // Authenticated but no active subscription — show upgrade prompt
+    if (!isAuthenticated) {
       setUpgradeTarget(companyId);
       setShowUpgrade(true);
-    } else {
-      // Not authenticated — redirect to register/login
-      setUpgradeTarget(companyId);
-      setShowUpgrade(true);
+      return;
     }
-  }, [isAuthenticated, isAdmin]);
+
+    setUnlockingId(companyId);
+    try {
+      const result = await unlockApi.unlockCompany(companyId);
+      if (result.status === "SUCCESS") {
+        // Refetch to update the card from locked → unlocked
+        refetch();
+        Alert.alert("Company Unlocked!", result.message);
+      } else if (result.status === "INSUFFICIENT_CREDITS") {
+        // Show upgrade prompt
+        setUpgradeTarget(companyId);
+        setShowUpgrade(true);
+      } else if (result.status === "ALREADY_UNLOCKED") {
+        // Navigate directly to company detail
+        router.push(`/(authenticated)/company/${companyId}`);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to unlock company";
+      Alert.alert("Error", message);
+    } finally {
+      setUnlockingId(null);
+    }
+  }, [isAuthenticated, isAdmin, refetch]);
 
   const handleCompanyPress = useCallback((companyId: string) => {
     router.push(`/(authenticated)/company/${companyId}`);
@@ -55,6 +75,7 @@ export default function CompaniesScreen() {
           company={item as FreeCompanyResponse}
           onUnlock={handleUnlock}
           onPress={handleCompanyPress}
+          isUnlocking={unlockingId === item.companyId}
         />
       );
     }

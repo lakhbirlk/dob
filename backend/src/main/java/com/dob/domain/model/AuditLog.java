@@ -13,8 +13,10 @@ public class AuditLog {
     private UUID userId;
     private String action;
     private UUID companyId;
+    private String transactionId;
     private String outcome;
     private String details;
     private String ipAddress;
+    private String userAgent;
     private Instant createdAt;
 }

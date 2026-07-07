@@ -16,5 +16,9 @@ public record PaymentOrderRequest(
     @NotBlank String paymentType,
 
     @Schema(description = "Company UUID (required when paymentType is LISTING)")
-    String companyId
+    String companyId,
+
+    @Schema(description = "Plan ID for credit-based plans", example = "CREDITS_10",
+            allowableValues = {"CREDITS_3", "CREDITS_5", "CREDITS_10", "CREDITS_20", "CREDITS_30"})
+    String planId
 ) {}

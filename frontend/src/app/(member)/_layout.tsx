@@ -34,6 +34,9 @@ export default function MemberLayout() {
       <Stack.Screen name="dashboard" options={{ title: "Research Dashboard" }} />
       <Stack.Screen name="downloads" options={{ title: "Downloads", headerShown: true }} />
       <Stack.Screen name="profile" options={{ title: "My Profile", headerShown: true }} />
+      <Stack.Screen name="unlocked-companies" options={{ title: "Unlocked Companies", headerShown: true }} />
+      <Stack.Screen name="credit-history" options={{ title: "Credit History", headerShown: true }} />
+      <Stack.Screen name="activity-log" options={{ title: "Activity Log", headerShown: true }} />
     </Stack>
   );
 }

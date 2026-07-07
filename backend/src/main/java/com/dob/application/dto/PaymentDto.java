@@ -22,6 +22,9 @@ public record PaymentDto(
     @Schema(description = "Associated company UUID (for listing payments)")
     UUID companyId,
 
+    @Schema(description = "Selected plan ID for credit-based plans", example = "CREDITS_10")
+    String planId,
+
     @Schema(description = "Base amount in INR", example = "2500.00")
     BigDecimal amount,
 

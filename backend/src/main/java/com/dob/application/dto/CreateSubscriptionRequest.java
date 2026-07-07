@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 @Schema(description = "Request to create a new subscription for a membership plan")
 public record CreateSubscriptionRequest(
     @NotBlank(message = "Plan is required")
-    @Schema(description = "Plan type", example = "RESEARCH", allowableValues = {"RESEARCH", "COMPANY"})
+    @Schema(description = "Plan type", example = "CREDITS_10",
+            allowableValues = {"CREDITS_3", "CREDITS_5", "CREDITS_10", "CREDITS_20", "CREDITS_30", "COMPANY"})
     String plan
 ) {}

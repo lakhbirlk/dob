@@ -47,9 +47,13 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/companies/**/financials").hasRole("COMPANY_USER")
                 .requestMatchers(HttpMethod.POST, "/api/companies/**/certificates").hasRole("COMPANY_USER")
                 .requestMatchers(HttpMethod.POST, "/api/companies/**/videos").hasRole("COMPANY_USER")
+                // Public plans endpoint (no auth needed to view pricing)
+                .requestMatchers(HttpMethod.GET, "/api/memberships/plans").permitAll()
                 // Member only
                 .requestMatchers(HttpMethod.POST, "/api/downloads/**").hasRole("RESEARCH_MEMBER")
                 .requestMatchers("/api/memberships/**").hasAnyRole("RESEARCH_MEMBER", "COMPANY_USER")
+                // Company unlock — research members only
+                .requestMatchers("/api/unlock/**").hasRole("RESEARCH_MEMBER")
                 // Authenticated
                 .requestMatchers("/api/users/**").authenticated()
                 .requestMatchers("/api/subscriptions/**").authenticated()
