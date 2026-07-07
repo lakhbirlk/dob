@@ -8,6 +8,7 @@ import { Modal } from '@/components/Modal';
 import { colors } from '@/theme/colors';
 import { adminApi } from '@/services/api';
 import type { CompanyDetailDto, CompanyDto } from '@/types';
+import { useQueryClient } from '@tanstack/react-query';
 import { CompanyStatus } from '@/types';
 
 type StatusConfig = Record<string, { variant: 'warning' | 'success' | 'danger' | 'info' | 'neutral'; label: string }>;
@@ -23,6 +24,7 @@ const STATUS_CONFIG: StatusConfig = {
 };
 
 export default function PendingApprovalsScreen() {
+  const queryClient = useQueryClient();
   const [pendingCompanies, setPendingCompanies] = useState<CompanyDetailDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +56,7 @@ export default function PendingApprovalsScreen() {
       await adminApi.approveCompany(companyId);
       setPendingCompanies(prev => prev.filter(c => c.id !== companyId));
       setSelectedCompany(null);
+      queryClient.invalidateQueries({ queryKey: ["admin", "company-members"] });
     } catch (err: any) {
       const message = err?.response?.data?.detail || err?.response?.data?.message || err?.message || 'Failed to approve company';
       Alert.alert('Error', message);
@@ -75,6 +78,7 @@ export default function PendingApprovalsScreen() {
       setShowRejectModal(false);
       setSelectedCompany(null);
       setRejectComment('');
+      queryClient.invalidateQueries({ queryKey: ["admin", "company-members"] });
     } catch (err: any) {
       const message = err?.response?.data?.detail || err?.response?.data?.message || err?.message || 'Failed to reject company';
       Alert.alert('Error', message);

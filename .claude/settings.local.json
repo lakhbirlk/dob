@@ -87,7 +87,11 @@
       "Bash(mvn test *)",
       "Bash(docker info *)",
       "Bash(npx *)",
-      "Read(//c/Users/lakhbir/Desktop/dob/frontend/**)"
+      "Read(//c/Users/lakhbir/Desktop/dob/frontend/**)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(./mvnw compile *)",
+      "PowerShell(taskkill *)"
     ]
   }
 }

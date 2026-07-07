@@ -261,17 +261,126 @@ public class CompanyService {
     // ──────── Admin Actions ────────
 
     /**
-     * Admin approves a pending-review company. Sets to APPROVED_MEMBERSHIP_PENDING.
+     * Admin approves a pending-review company. Sets to APPROVED_ACTIVE
+     * with a 1-year listing membership so the company immediately appears
+     * in the company database search results.
+     *
+     * @throws DomainException with message "Company is already approved" for duplicates
      */
     @Transactional
     public CompanyDto approveCompany(UUID id, UserPrincipal principal) {
         var company = companyRepository.findById(id)
             .orElseThrow(() -> new CompanyNotFoundException(id.toString()));
 
-        company.approve(principal.id());
-        company = companyRepository.save(company);
-        log.info("Company {} approved by admin {}", company.getPublicCompanyId(), principal.id());
-        return toDto(company);
+        // Prevent duplicate approval
+        if (company.getStatus() == Company.CompanyStatus.APPROVED_ACTIVE) {
+            throw new DomainException("Company is already approved and published");
+        }
+        if (company.getStatus() == Company.CompanyStatus.APPROVED_MEMBERSHIP_PENDING) {
+            throw new DomainException("Company is already approved");
+        }
+
+        // Only allow approval from PENDING_REVIEW or DRAFT
+        if (company.getStatus() != Company.CompanyStatus.PENDING_REVIEW
+            && company.getStatus() != Company.CompanyStatus.DRAFT) {
+            throw new DomainException(
+                "Only draft or pending-review companies can be approved. Current status: " + company.getStatus());
+        }
+
+        var now = Instant.now();
+        var oneYearFromNow = LocalDate.now().plusYears(1);
+
+        var updated = Company.builder()
+            .id(company.getId())
+            .publicCompanyId(company.getPublicCompanyId())
+            .name(company.getName())
+            .brandName(company.getBrandName())
+            .sector(company.getSector())
+            .state(company.getState())
+            .city(company.getCity())
+            .companyType(company.getCompanyType())
+            .incorporationYear(company.getIncorporationYear())
+            .description(company.getDescription())
+            .businessDescription(company.getBusinessDescription())
+            .website(company.getWebsite())
+            .logoUrl(company.getLogoUrl())
+            .status(Company.CompanyStatus.APPROVED_ACTIVE)
+            .createdBy(company.getCreatedBy())
+            .approvedBy(principal.id())
+            .approvedAt(now)
+            .submittedAt(company.getSubmittedAt() != null ? company.getSubmittedAt() : now)
+            .rejectionComment(null)
+            .listingExpiresAt(oneYearFromNow)
+            .createdAt(company.getCreatedAt())
+            .updatedAt(now)
+            // Registration
+            .cin(company.getCin())
+            .gstin(company.getGstin())
+            .pan(company.getPan())
+            .tan(company.getTan())
+            .msmeRegistration(company.getMsmeRegistration())
+            .startupIndiaRegistration(company.getStartupIndiaRegistration())
+            .companyRegistrationNumber(company.getCompanyRegistrationNumber())
+            // Registered Office
+            .registeredAddressLine1(company.getRegisteredAddressLine1())
+            .registeredAddressLine2(company.getRegisteredAddressLine2())
+            .registeredCity(company.getRegisteredCity())
+            .registeredState(company.getRegisteredState())
+            .registeredPinCode(company.getRegisteredPinCode())
+            .registeredCountry(company.getRegisteredCountry())
+            // Contact
+            .officialEmail(company.getOfficialEmail())
+            .officialPhone(company.getOfficialPhone())
+            .phoneNumber(company.getPhoneNumber())
+            .headquarter(company.getHeadquarter())
+            .linkedinProfile(company.getLinkedinProfile())
+            .twitterUrl(company.getTwitterUrl())
+            .socialMediaLinks(company.getSocialMediaLinks())
+            // Financial
+            .annualTurnover(company.getAnnualTurnover())
+            .paidUpCapital(company.getPaidUpCapital())
+            .authorizedCapital(company.getAuthorizedCapital())
+            .employeeCount(company.getEmployeeCount())
+            .financialYear(company.getFinancialYear())
+            .balanceSheetUrl(company.getBalanceSheetUrl())
+            .auditorDetails(company.getAuditorDetails())
+            .totalFunding(company.getTotalFunding())
+            .investors(company.getInvestors())
+            // Business
+            .productsServices(company.getProductsServices())
+            .exportImportStatus(company.getExportImportStatus())
+            .numBranches(company.getNumBranches())
+            .operationalStates(company.getOperationalStates())
+            .certifications(company.getCertifications())
+            .technologiesUsed(company.getTechnologiesUsed())
+            // Extended Profile
+            .ceoName(company.getCeoName())
+            .ctoName(company.getCtoName())
+            .founders(company.getFounders())
+            .businessModel(company.getBusinessModel())
+            .companyStage(company.getCompanyStage())
+            .awards(company.getAwards())
+            .cultureSummary(company.getCultureSummary())
+            .mission(company.getMission())
+            .vision(company.getVision())
+            .dashboardStatus(company.getDashboardStatus())
+            // JSON aggregates
+            .financialDataJson(company.getFinancialDataJson())
+            .certificatesDataJson(company.getCertificatesDataJson())
+            .videosDataJson(company.getVideosDataJson())
+            // Authorized Representative
+            .authorizedRepName(company.getAuthorizedRepName())
+            .authorizedRepDesignation(company.getAuthorizedRepDesignation())
+            .authorizedRepMobile(company.getAuthorizedRepMobile())
+            .authorizedRepEmail(company.getAuthorizedRepEmail())
+            .authorizedRepIdentityProofUrl(company.getAuthorizedRepIdentityProofUrl())
+            .authorizedRepDigitalSignatureUrl(company.getAuthorizedRepDigitalSignatureUrl())
+            .build();
+
+        updated = companyRepository.save(updated);
+        log.info("Company {} approved and published by admin {}. Visible until {}",
+            updated.getPublicCompanyId(), principal.id(), oneYearFromNow);
+        return toDto(updated);
     }
 
     /**

@@ -72,10 +72,23 @@ public class AdminController {
 
     @PostMapping("/companies/{id}/approve")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-    @Operation(summary = "Approve company", description = "Approve a pending-review company listing. Company moves to APPROVED_MEMBERSHIP_PENDING (not publicly visible until listing membership purchased).")
+    @Operation(summary = "Approve company", description = "Approve a pending-review company listing. Company moves to APPROVED_ACTIVE and becomes visible in the company database.")
     public CompanyDto approveCompany(@Parameter(description = "Company UUID") @PathVariable UUID id,
                                       @AuthenticationPrincipal UserPrincipal principal) {
-        return companyService.approveCompany(id, principal);
+        var result = companyService.approveCompany(id, principal);
+
+        // Create audit log
+        auditLogRepository.save(AuditLog.builder()
+            .id(UUID.randomUUID())
+            .userId(principal.id())
+            .action("COMPANY_APPROVED")
+            .companyId(id)
+            .outcome("SUCCESS")
+            .details("Company " + result.name() + " (" + result.publicCompanyId() + ") approved and published by admin " + principal.id())
+            .createdAt(java.time.Instant.now())
+            .build());
+
+        return result;
     }
 
     @PostMapping("/companies/{id}/reject")
@@ -85,7 +98,20 @@ public class AdminController {
                                      @AuthenticationPrincipal UserPrincipal principal,
                                      @RequestBody ReviewRequest reviewRequest) {
         String comment = reviewRequest != null ? reviewRequest.comment() : null;
-        return companyService.rejectCompany(id, principal, comment);
+        var result = companyService.rejectCompany(id, principal, comment);
+
+        // Create audit log
+        auditLogRepository.save(AuditLog.builder()
+            .id(UUID.randomUUID())
+            .userId(principal.id())
+            .action("COMPANY_REJECTED")
+            .companyId(id)
+            .outcome("SUCCESS")
+            .details("Company rejected by admin " + principal.id() + ". Reason: " + (comment != null ? comment : "No reason provided"))
+            .createdAt(java.time.Instant.now())
+            .build());
+
+        return result;
     }
 
     @PostMapping("/companies/{id}/suspend")

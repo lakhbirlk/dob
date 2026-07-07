@@ -8,11 +8,13 @@ import { colors } from "@/theme/colors";
 import { useQuery } from "@tanstack/react-query";
 import { adminApi } from "@/services/api";
 
-const STATUS_TABS = ["ALL", "APPROVED", "PENDING", "SUSPENDED"] as const;
+const STATUS_TABS = ["ALL", "APPROVED_ACTIVE", "PENDING_REVIEW", "SUSPENDED", "REJECTED"] as const;
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  APPROVED: { label: "APPROVED", color: colors.green, bg: colors.greenLight },
-  PENDING: { label: "PENDING", color: colors.goldDark, bg: colors.goldPale },
+  APPROVED_ACTIVE: { label: "APPROVED", color: colors.green, bg: colors.greenLight },
+  APPROVED_MEMBERSHIP_PENDING: { label: "APPROVED", color: colors.green, bg: colors.greenLight },
+  PENDING_REVIEW: { label: "PENDING", color: colors.goldDark, bg: colors.goldPale },
+  DRAFT: { label: "DRAFT", color: colors.muted, bg: colors.line },
   REJECTED: { label: "REJECTED", color: colors.red, bg: colors.redLight },
   SUSPENDED: { label: "SUSPENDED", color: colors.red, bg: colors.redLight },
 };
@@ -155,7 +157,7 @@ export default function AdminCompanyMembersScreen() {
             }`}
           >
             <Text className={`text-xs font-bold ${activeTab === tab ? "text-white" : "text-ink"}`}>
-              {tab === "ALL" ? "All" : tab.charAt(0) + tab.slice(1).toLowerCase()}
+              {tab === "ALL" ? "All" : tab === "APPROVED_ACTIVE" || tab === "APPROVED_MEMBERSHIP_PENDING" ? "Approved" : tab === "PENDING_REVIEW" ? "Pending" : tab === "SUSPENDED" ? "Suspended" : tab === "REJECTED" ? "Rejected" : tab}
             </Text>
           </TouchableOpacity>
         ))}
