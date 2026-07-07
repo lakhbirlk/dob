@@ -128,7 +128,52 @@ export default function PaymentScreen() {
     }).finally(() => setPlansLoaded(true));
   }, []);
 
+  // Derived value — computed before useCallback so it can be referenced, and before
+  // conditional returns so hook ordering is stable across renders.
   const plan = buildPlanDetail(planKey, plans);
+
+  // Dashboard route for post-payment redirect (derived from plan, used in callback deps)
+  const dashboardRoute = plan?.dashboardRoute ?? "/(member)/dashboard";
+
+  const handlePayNow = useCallback(async () => {
+    setPaymentState("processing");
+    setError(null);
+
+    try {
+      // Step 1: Create subscription on backend
+      const sub = await subscriptionsApi.create(planKey);
+
+      // Step 2: Simulate payment processing delay (1.5s)
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // Step 3: Complete payment — activate membership
+      const result = await paymentsApi.simulateSuccess(sub.subscriptionId);
+      setTransactionId(result.transactionId);
+      setPaymentState("success");
+
+      // Step 4: Auto-redirect after 2 seconds
+      setTimeout(() => {
+        router.replace(dashboardRoute as any);
+      }, 2000);
+    } catch (err: unknown) {
+      let message = "Payment failed. Please try again.";
+      if (err instanceof Error) {
+        // Extract backend error detail from axios response if available
+        const axiosErr = (err as Record<string, unknown>).response as Record<string, unknown> | undefined;
+        if (axiosErr?.data) {
+          const data = axiosErr.data as Record<string, unknown>;
+          if (typeof data.detail === "string") message = data.detail;
+          else if (typeof data.message === "string") message = data.message;
+        } else {
+          message = err.message;
+        }
+      }
+      setError(message);
+      setPaymentState("idle");
+    }
+  }, [planKey, dashboardRoute]);
+
+  // ──────────── ALL HOOKS ABOVE HERE — CONDITIONAL GUARDS BELOW ────────────
 
   // Guard: not authenticated → redirect to login
   if (isHydrated && !isAuthenticated) {
@@ -159,44 +204,6 @@ export default function PaymentScreen() {
       </SafeAreaView>
     );
   }
-
-  const handlePayNow = useCallback(async () => {
-    setPaymentState("processing");
-    setError(null);
-
-    try {
-      // Step 1: Create subscription on backend
-      const sub = await subscriptionsApi.create(planKey);
-
-      // Step 2: Simulate payment processing delay (1.5s)
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // Step 3: Complete payment — activate membership
-      const result = await paymentsApi.simulateSuccess(sub.subscriptionId);
-      setTransactionId(result.transactionId);
-      setPaymentState("success");
-
-      // Step 4: Auto-redirect after 2 seconds
-      setTimeout(() => {
-        router.replace(plan.dashboardRoute as any);
-      }, 2000);
-    } catch (err: unknown) {
-      let message = "Payment failed. Please try again.";
-      if (err instanceof Error) {
-        // Extract backend error detail from axios response if available
-        const axiosErr = (err as Record<string, unknown>).response as Record<string, unknown> | undefined;
-        if (axiosErr?.data) {
-          const data = axiosErr.data as Record<string, unknown>;
-          if (typeof data.detail === "string") message = data.detail;
-          else if (typeof data.message === "string") message = data.message;
-        } else {
-          message = err.message;
-        }
-      }
-      setError(message);
-      setPaymentState("idle");
-    }
-  }, [planKey, plan.dashboardRoute]);
 
   // ──────────────────── SUCCESS STATE ────────────────────
 
