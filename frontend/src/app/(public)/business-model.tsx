@@ -5,6 +5,7 @@ import { Card } from "@/components/Card";
 import { Badge } from "@/components/Badge";
 import { Button } from "@/components/Button";
 import { useAuthStore } from "@/store/authStore";
+import ChatBot from "@/components/ChatBot";
 
 // ─────────────────────── Data ───────────────────────
 
@@ -125,7 +126,8 @@ export default function BusinessModelScreen() {
   const { isAuthenticated } = useAuthStore();
 
   return (
-    <ScrollView className="flex-1 bg-bg" showsVerticalScrollIndicator={false}>
+    <View className="flex-1 bg-bg">
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
       {/* ===== HERO ===== */}
       <View
         className="bg-navy-deep pt-14 pb-12 px-5"
@@ -469,5 +471,7 @@ export default function BusinessModelScreen() {
         </Text>
       </View>
     </ScrollView>
+      <ChatBot />
+    </View>
   );
 }
